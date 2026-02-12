@@ -13,6 +13,7 @@ import {
   DownloadCloud, EyeOff, UserCheck, Settings as SettingsIcon,
   Smartphone, Smartphone as SmartphoneIcon, Wallet
 } from "lucide-react";
+import Swal from 'sweetalert2';
 
 // Import du logo
 import logoImage from "../../assets/images/logo.jpeg";
@@ -25,8 +26,34 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("users");
   const [notifications, setNotifications] = useState(3);
 
-  // Données simulées pour le dashboard admin
+  // ============ DONNÉES ADMIN ============
+  const [adminData] = useState({
+    name: "Admin Système",
+    email: "admin@signapp.com",
+    role: "Super Administrateur",
+    avatar: "SA",
+    phone: "+221 77 123 45 67",
+    createdAt: "01/01/2024",
+    lastLogin: new Date().toLocaleString('fr-FR')
+  });
+
+  // ============ DONNÉES PRINCIPALES ============
   const [dashboardData, setDashboardData] = useState({
+    // KPIs pour les nouvelles cards
+    totalUsers: 12547,
+    totalContracts: 124586,
+    totalInvoices: 45321,
+    
+    // Liste des utilisateurs pour la nouvelle table
+    usersList: [
+      { id: 1, nom: "Gueye", prenom: "Alassane", email: "alassane@entreprise.sn", telephone: "+221 77 123 45 67", role: "Administrateur", status: "actif", dateInscription: "15/01/2024" },
+      { id: 2, nom: "Thiam", prenom: "Ibnou", email: "ibnou@tech.sn", telephone: "+221 78 234 56 78", role: "Utilisateur Premium", status: "actif", dateInscription: "20/01/2024" },
+      { id: 3, nom: "Beye", prenom: "Balla", email: "balla@legal.sn", telephone: "+221 76 345 67 89", role: "Utilisateur Standard", status: "inactif", dateInscription: "05/02/2024" },
+      { id: 4, nom: "Diao", prenom: "Aboubekrine", email: "aboubekrine@startup.sn", telephone: "+221 77 456 78 90", role: "Administrateur", status: "actif", dateInscription: "12/02/2024" },
+      { id: 5, nom: "Ndoye", prenom: "Adama", email: "adama@consulting.sn", telephone: "+221 78 567 89 01", role: "Utilisateur Premium", status: "actif", dateInscription: "28/02/2024" }
+    ],
+
+    // ============ ANCIENNES DONNÉES ============
     user: {
       name: "Admin Système",
       email: "admin@signapp.com",
@@ -34,7 +61,7 @@ export default function AdminDashboard() {
       avatar: "SA"
     },
     
-    // KPIs Principaux
+    // KPIs Principaux (anciens)
     kpis: {
       totalUsers: 12547,
       activeUsers: 8923,
@@ -102,8 +129,16 @@ export default function AdminDashboard() {
     ]
   });
 
-  // Menu items spécifiques admin
+  // ============ MENU SIMPLIFIÉ (4 ITEMS SEULEMENT) ============
   const menuItems = [
+    { id: "dashboard", label: "Accueil", icon: Home, color: "#ffffff" },
+    { id: "users", label: "Les utilisateurs", icon: Users, color: "#ffffff" },
+    { id: "profile", label: "Profils", icon: User, color: "#ffffff" },
+    { id: "logout", label: "Déconnexion", icon: LogOut, color: "#ffffff" }
+  ];
+
+  // ============ ANCIENS MENU ITEMS (GARDÉS POUR RÉFÉRENCE) ============
+  const oldMenuItems = [
     { id: "dashboard", label: "Tableau de bord", icon: Home, color: "#ffffff" },
     { id: "users", label: "Gestion Utilisateurs", icon: Users, color: "#ffffff" },
     { id: "documents", label: "Supervision Documents", icon: FileText, color: "#ffffff" },
@@ -130,7 +165,10 @@ export default function AdminDashboard() {
     { id: "security", label: "Sécurité", icon: Shield, color: "#000000" }
   ];
 
+  // ============ COULEURS STATUT ============
   const statusColors = {
+    "actif": { bg: "#f0fdf4", text: "#166534", border: "#dcfce7" },
+    "inactif": { bg: "#fef2f2", text: "#991b1b", border: "#fee2e2" },
     "online": { bg: "#f3f4f6", text: "#000000", border: "#e5e7eb", icon: "#000000" },
     "offline": { bg: "#f9fafb", text: "#666666", border: "#f3f4f6", icon: "#666666" },
     "active": { bg: "#f3f4f6", text: "#000000", border: "#e5e7eb", icon: "#000000" },
@@ -153,15 +191,94 @@ export default function AdminDashboard() {
     { key: "securityAlerts", label: "Alertes Sécurité", icon: Shield, color: "#000000", trend: "-8%" }
   ];
 
-  const getSeverityIcon = (severity) => {
-    switch(severity) {
-      case "high": return <AlertTriangle size={14} />;
-      case "medium": return <AlertTriangle size={14} />;
-      case "low": return <AlertTriangle size={14} />;
-      default: return <AlertTriangle size={14} />;
+  // ============ FONCTIONNALITÉ 1: MESSAGE DE CONNEXION ============
+  useEffect(() => {
+    const justLoggedIn = sessionStorage.getItem('adminJustLoggedIn');
+    if (justLoggedIn === 'true') {
+      Swal.fire({
+        icon: 'success',
+        title: 'Connexion réussie !',
+        text: 'Bienvenue dans l\'espace administrateur',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#000000',
+        background: '#ffffff'
+      });
+      sessionStorage.removeItem('adminJustLoggedIn');
+    }
+  }, []);
+
+  // ============ FONCTIONNALITÉ 5: DÉCONNEXION ============
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Déconnexion',
+      text: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Oui, déconnecter',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#000000',
+      cancelButtonColor: '#666666',
+      background: '#ffffff'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = '/login';
+      }
+    });
+  };
+
+  // ============ FONCTIONNALITÉ 4: ACTIVER/DÉSACTIVER UTILISATEUR ============
+  const handleToggleUserStatus = (userId) => {
+    const user = dashboardData.usersList.find(u => u.id === userId);
+    const newStatus = user.status === 'actif' ? 'inactif' : 'actif';
+    
+    Swal.fire({
+      title: `${newStatus === 'actif' ? 'Activer' : 'Désactiver'} l'utilisateur`,
+      html: `
+        <div style="text-align: left;">
+          <p>Utilisateur : <strong>${user.prenom} ${user.nom}</strong></p>
+          <p>Email : ${user.email}</p>
+          <p>Rôle : ${user.role}</p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: newStatus === 'actif' ? '#059669' : '#dc2626',
+      cancelButtonColor: '#666666'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setDashboardData(prev => ({
+          ...prev,
+          usersList: prev.usersList.map(u => 
+            u.id === userId ? { ...u, status: newStatus } : u
+          )
+        }));
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: `L'utilisateur a été ${newStatus === 'actif' ? 'activé' : 'désactivé'}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    });
+  };
+
+  // ============ GESTIONNAIRE DE MENU ============
+  const handleMenuClick = (menuId) => {
+    if (menuId === 'logout') {
+      handleLogout();
+    } else {
+      setActiveMenu(menuId);
     }
   };
 
+  // ============ FORMATAGE ============
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -177,16 +294,15 @@ export default function AdminDashboard() {
     return formatNumber(dashboardData.kpis[key]);
   };
 
-  // Effet pour vérifier l'affichage
-  useEffect(() => {
-    console.log("Dashboard chargé - Sidebar ouvert:", sidebarOpen);
-  }, [sidebarOpen]);
+  const getSeverityIcon = (severity) => {
+    return <AlertTriangle size={14} />;
+  };
 
   return (
     <>
       <style>
         {`
-        /* ====== Variables CSS ====== */
+        /* ====== VARIABLES CSS ====== */
         :root {
           --primary-color: #000000;
           --sidebar-bg: #000000;
@@ -198,7 +314,6 @@ export default function AdminDashboard() {
           --hover-bg: #f9fafb;
         }
 
-        /* ====== Reset et base ====== */
         * {
           box-sizing: border-box;
           margin: 0;
@@ -209,14 +324,11 @@ export default function AdminDashboard() {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           width: 100%;
           height: 100%;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
           background: #ffffff;
           color: var(--text-primary);
-          font-size: 15px; /* TAILLE AUGMENTÉE */
+          font-size: 15px;
         }
 
-        /* ====== Layout principal ====== */
         .dashboard-container {
           display: flex;
           width: 100vw;
@@ -225,68 +337,59 @@ export default function AdminDashboard() {
           overflow: hidden;
         }
 
-        /* ====== Sidebar avec fond noir et animation améliorée ====== */
+        /* ====== SIDEBAR ====== */
         .sidebar {
-          width: ${sidebarOpen ? '280px' : '80px'}; /* Largeur augmentée */
+          width: ${sidebarOpen ? '280px' : '80px'};
           background: var(--sidebar-bg);
           border-right: 1px solid #333333;
           display: flex;
           flex-direction: column;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animation améliorée */
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 40;
           position: relative;
-          box-shadow: ${sidebarOpen ? '2px 0 12px rgba(0, 0, 0, 0.1)' : 'none'};
         }
 
-        /* Logo et toggle */
         .sidebar-header {
-          padding: 24px; /* Augmenté */
+          padding: 24px;
           border-bottom: 1px solid #333333;
           display: flex;
           align-items: center;
           justify-content: ${sidebarOpen ? 'space-between' : 'center'};
-          position: relative;
-          z-index: 2;
-          min-height: 80px; /* Hauteur augmentée */
+          min-height: 80px;
         }
 
         .logo-container {
           display: flex;
           align-items: center;
-          gap: 12px; /* Espacement augmenté */
+          gap: 12px;
           opacity: ${sidebarOpen ? '1' : '0'};
           width: ${sidebarOpen ? 'auto' : '0'};
           overflow: hidden;
           transition: all 0.3s ease;
-          position: relative;
-          z-index: 2;
         }
 
         .logo-image {
-          width: 44px; /* Augmenté */
-          height: 44px; /* Augmenté */
-          border-radius: 10px; /* Augmenté */
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
           overflow: hidden;
           background: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           border: 2px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.3s ease;
         }
 
         .logo-image img {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          border-radius: 8px;
         }
 
         .logo-text {
-          font-size: 22px; /* Augmenté */
-          font-weight: 800; /* Plus gras */
+          font-size: 22px;
+          font-weight: 800;
           color: #ffffff;
-          letter-spacing: -0.3px;
         }
 
         .menu-toggle {
@@ -294,65 +397,39 @@ export default function AdminDashboard() {
           border: 1px solid #333333;
           color: #ffffff;
           cursor: pointer;
-          padding: 8px; /* Augmenté */
-          border-radius: 8px; /* Augmenté */
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          width: 40px; /* Augmenté */
-          height: 40px; /* Augmenté */
+          padding: 8px;
+          border-radius: 8px;
+          width: 40px;
+          height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: all 0.3s ease;
         }
 
         .menu-toggle:hover {
           background: rgba(255, 255, 255, 0.2);
-          color: #ffffff;
           transform: scale(1.05);
         }
 
-        .menu-toggle:active {
-          transform: scale(0.95);
-        }
-
-        /* Menu principal */
         .sidebar-menu {
           flex: 1;
-          padding: 20px 0; /* Augmenté */
+          padding: 20px 0;
           overflow-y: auto;
-          position: relative;
-          z-index: 2;
         }
 
         .menu-item {
           display: flex;
           align-items: center;
-          gap: 14px; /* Espacement augmenté */
-          padding: 16px 20px; /* Augmenté */
+          gap: 14px;
+          padding: 16px 20px;
           color: #cccccc;
-          text-decoration: none;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
-          margin: 0 12px 6px 12px; /* Espacement augmenté */
-          border-radius: 8px; /* Augmenté */
-          font-size: 15px; /* TAILLE AUGMENTÉE */
+          margin: 0 12px 6px 12px;
+          border-radius: 8px;
+          font-size: 15px;
           font-weight: 500;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .menu-item::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-          transition: left 0.6s;
-        }
-
-        .menu-item:hover::before {
-          left: 100%;
+          transition: all 0.2s ease;
         }
 
         .menu-item:hover {
@@ -364,103 +441,72 @@ export default function AdminDashboard() {
         .menu-item.active {
           background: rgba(255, 255, 255, 0.15);
           color: #ffffff;
-          border-left: 4px solid #ffffff; /* Épaisseur augmentée */
-          font-weight: 700; /* Plus gras */
-          transform: translateX(0);
+          border-left: 4px solid #ffffff;
+          font-weight: 700;
         }
 
         .menu-icon {
-          width: 20px; /* Augmenté */
-          height: 20px; /* Augmenté */
+          width: 20px;
+          height: 20px;
           flex-shrink: 0;
-          transition: transform 0.3s ease;
-        }
-
-        .menu-item:hover .menu-icon {
-          transform: scale(1.1);
         }
 
         .menu-label {
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          font-weight: 500;
+          font-size: 15px;
           white-space: nowrap;
           opacity: ${sidebarOpen ? '1' : '0'};
           width: ${sidebarOpen ? 'auto' : '0'};
           overflow: hidden;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Section utilisateur */
-        .user-section {
-          padding: 20px; /* Augmenté */
-          border-top: 1px solid #333333;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px; /* Espacement augmenté */
-          margin: 12px;
-          border-radius: 10px; /* Augmenté */
-          background: rgba(255, 255, 255, 0.05);
-          position: relative;
-          z-index: 2;
           transition: all 0.3s ease;
         }
 
-        .user-section:hover {
-          background: rgba(255, 255, 255, 0.08);
-          transform: translateY(-2px);
-        }
-
-        .user-info-sidebar {
+        .user-section {
+          padding: 20px;
+          border-top: 1px solid #333333;
           display: flex;
           align-items: center;
-          gap: 12px; /* Espacement augmenté */
-          width: 100%;
+          gap: 12px;
+          margin: 12px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.05);
         }
 
         .user-avatar {
-          width: 44px; /* Augmenté */
-          height: 44px; /* Augmenté */
+          width: 44px;
+          height: 44px;
           background: #ffffff;
-          border-radius: 10px; /* Augmenté */
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: #000000;
-          font-weight: 700; /* Plus gras */
-          font-size: 16px; /* Augmenté */
+          font-weight: 700;
+          font-size: 16px;
           flex-shrink: 0;
-          border: 2px solid rgba(255, 255, 255, 0.2); /* Épaisseur augmentée */
-          transition: all 0.3s ease;
-        }
-
-        .user-section:hover .user-avatar {
-          transform: scale(1.05);
-          border-color: rgba(255, 255, 255, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .user-details-sidebar {
           opacity: ${sidebarOpen ? '1' : '0'};
           width: ${sidebarOpen ? 'auto' : '0'};
           overflow: hidden;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s ease;
         }
 
         .user-name-sidebar {
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
+          font-size: 15px;
+          font-weight: 700;
           color: #ffffff;
           white-space: nowrap;
-          margin-bottom: 2px;
         }
 
         .user-role-sidebar {
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          font-size: 13px;
           color: rgba(255, 255, 255, 0.7);
           white-space: nowrap;
         }
 
-        /* ====== Main content ====== */
+        /* ====== MAIN CONTENT ====== */
         .main-content {
           flex: 1;
           display: flex;
@@ -470,12 +516,11 @@ export default function AdminDashboard() {
           background: #ffffff;
         }
 
-        /* Topbar */
         .topbar {
           background: #ffffff;
           border-bottom: 1px solid var(--card-border);
-          padding: 0 28px; /* Augmenté */
-          height: 72px; /* Hauteur augmentée */
+          padding: 0 28px;
+          height: 72px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -484,57 +529,16 @@ export default function AdminDashboard() {
           flex-shrink: 0;
         }
 
-        .topbar-left {
-          display: flex;
-          align-items: center;
-          gap: 20px; /* Espacement augmenté */
-        }
-
         .page-title {
-          font-size: 22px; /* Augmenté */
-          font-weight: 800; /* Plus gras */
+          font-size: 22px;
+          font-weight: 800;
           color: var(--text-primary);
-          white-space: nowrap;
-          letter-spacing: -0.5px;
-        }
-
-        .search-bar {
-          position: relative;
-          width: 350px; /* Largeur augmentée */
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 12px 16px 12px 44px; /* Augmenté */
-          border: 1px solid var(--card-border);
-          border-radius: 8px; /* Augmenté */
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          color: var(--text-primary);
-          background: #ffffff;
-          transition: all 0.3s ease;
-        }
-
-        .search-input:focus {
-          outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-icon {
-          position: absolute;
-          left: 16px; /* Décalage augmenté */
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text-secondary);
-          width: 18px; /* Augmenté */
-          height: 18px; /* Augmenté */
         }
 
         .topbar-right {
           display: flex;
           align-items: center;
-          gap: 20px; /* Espacement augmenté */
-          position: relative;
+          gap: 20px;
         }
 
         .notification-btn {
@@ -542,12 +546,11 @@ export default function AdminDashboard() {
           border: none;
           color: var(--text-secondary);
           cursor: pointer;
-          padding: 8px; /* Augmenté */
-          border-radius: 8px; /* Augmenté */
+          padding: 8px;
+          border-radius: 8px;
           position: relative;
-          transition: all 0.3s ease;
-          width: 44px; /* Augmenté */
-          height: 44px; /* Augmenté */
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -555,35 +558,20 @@ export default function AdminDashboard() {
 
         .notification-btn:hover {
           background: var(--hover-bg);
-          color: var(--text-primary);
           transform: scale(1.05);
         }
 
         .notification-badge {
           position: absolute;
-          top: 6px; /* Décalage augmenté */
-          right: 6px; /* Décalage augmenté */
-          width: 10px; /* Augmenté */
-          height: 10px; /* Augmenté */
+          top: 6px;
+          right: 6px;
+          width: 10px;
+          height: 10px;
           background: #000000;
           border-radius: 50%;
           border: 2px solid #ffffff;
-          animation: pulse 2s infinite;
         }
 
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
-          }
-          70% {
-            box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-          }
-        }
-
-        /* User dropdown */
         .user-dropdown-container {
           position: relative;
         }
@@ -591,9 +579,9 @@ export default function AdminDashboard() {
         .user-dropdown-trigger {
           display: flex;
           align-items: center;
-          gap: 10px; /* Espacement augmenté */
-          padding: 8px 12px; /* Augmenté */
-          border-radius: 8px; /* Augmenté */
+          gap: 10px;
+          padding: 8px 12px;
+          border-radius: 8px;
           background: transparent;
           border: 1px solid transparent;
           cursor: pointer;
@@ -602,19 +590,12 @@ export default function AdminDashboard() {
 
         .user-dropdown-trigger:hover {
           background: var(--hover-bg);
-          transform: scale(1.02);
-        }
-
-        .user-dropdown-trigger.active {
-          background: var(--hover-bg);
-          border-color: var(--card-border);
-          transform: scale(1.02);
         }
 
         .user-info-topbar {
           display: flex;
           align-items: center;
-          gap: 12px; /* Espacement augmenté */
+          gap: 12px;
         }
 
         .user-details-topbar {
@@ -622,23 +603,19 @@ export default function AdminDashboard() {
         }
 
         .user-name-topbar {
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
+          font-size: 15px;
+          font-weight: 700;
           color: var(--text-primary);
-          white-space: nowrap;
         }
 
         .user-role-topbar {
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          font-size: 13px;
           color: var(--text-secondary);
-          white-space: nowrap;
         }
 
         .dropdown-arrow {
           color: var(--text-secondary);
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          width: 18px; /* Augmenté */
-          height: 18px; /* Augmenté */
+          transition: transform 0.3s ease;
         }
 
         .dropdown-arrow.open {
@@ -649,143 +626,372 @@ export default function AdminDashboard() {
           position: absolute;
           top: calc(100% + 8px);
           right: 0;
-          width: 260px; /* Largeur augmentée */
+          width: 260px;
           background: #ffffff;
-          border-radius: 12px; /* Augmenté */
+          border-radius: 12px;
           border: 1px solid var(--card-border);
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
           z-index: 1000;
           overflow: hidden;
           display: ${userDropdownOpen ? 'block' : 'none'};
-          animation: dropdownFade 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-origin: top right;
+          animation: dropdownFade 0.2s ease;
         }
 
         @keyframes dropdownFade {
-          from {
-            opacity: 0;
-            transform: translateY(-10px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         .dropdown-header {
-          padding: 20px; /* Augmenté */
+          padding: 20px;
           border-bottom: 1px solid var(--card-border);
           background: var(--hover-bg);
         }
 
         .dropdown-user-name {
-          font-size: 16px; /* Augmenté */
-          font-weight: 800; /* Plus gras */
+          font-size: 16px;
+          font-weight: 800;
           color: var(--text-primary);
           margin-bottom: 4px;
         }
 
         .dropdown-user-email {
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          font-size: 14px;
           color: var(--text-secondary);
         }
 
         .dropdown-menu-items {
-          padding: 8px 0; /* Augmenté */
+          padding: 8px 0;
         }
 
         .dropdown-item {
           display: flex;
           align-items: center;
-          gap: 12px; /* Espacement augmenté */
-          padding: 12px 20px; /* Augmenté */
+          gap: 12px;
+          padding: 12px 20px;
           color: var(--text-secondary);
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          font-size: 14px;
           cursor: pointer;
           transition: all 0.2s ease;
-          font-weight: 500;
         }
 
         .dropdown-item:hover {
           background: var(--hover-bg);
           color: var(--text-primary);
-          padding-left: 24px;
         }
 
         .dropdown-divider {
           height: 1px;
           background: var(--card-border);
-          margin: 8px 20px; /* Espacement augmenté */
+          margin: 8px 20px;
         }
 
-        .dropdown-icon {
-          width: 18px; /* Augmenté */
-          height: 18px; /* Augmenté */
-          color: inherit;
-          transition: transform 0.2s ease;
-        }
-
-        .dropdown-item:hover .dropdown-icon {
-          transform: scale(1.1);
-        }
-
-        .mobile-menu-toggle {
-          display: none;
-          background: none;
-          border: none;
-          color: var(--text-secondary);
-          cursor: pointer;
-          padding: 8px; /* Augmenté */
-          border-radius: 8px; /* Augmenté */
-          transition: all 0.3s ease;
-          width: 44px; /* Augmenté */
-          height: 44px; /* Augmenté */
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .mobile-menu-toggle:hover {
-          background: var(--hover-bg);
-          color: var(--text-primary);
-          transform: scale(1.05);
-        }
-
-        /* Content area */
         .content-area {
           flex: 1;
           overflow-y: auto;
-          padding: 28px; /* Augmenté */
+          padding: 28px;
           background: #ffffff;
-          min-height: calc(100vh - 72px);
         }
 
-        /* Header with filters */
+        /* ====== SECTION DIVIDER ====== */
+        .section-divider {
+          margin: 40px 0 20px;
+          border-top: 2px solid var(--card-border);
+          position: relative;
+        }
+
+        .section-divider-title {
+          position: absolute;
+          top: -14px;
+          left: 20px;
+          background: #ffffff;
+          padding: 0 20px;
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--text-primary);
+          letter-spacing: -0.3px;
+        }
+
+        /* ====== NOUVELLES CARDS (3 PAR LIGNE) ====== */
+        .cards-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+          margin-bottom: 32px;
+        }
+
+        .stat-card {
+          background: #ffffff;
+          border-radius: 16px;
+          padding: 24px;
+          border: 1px solid var(--card-border);
+          transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+          border-color: #000000;
+        }
+
+        .stat-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
+        }
+
+        .stat-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #000000;
+          color: #ffffff;
+        }
+
+        .stat-value {
+          font-size: 36px;
+          font-weight: 900;
+          color: var(--text-primary);
+          margin-bottom: 8px;
+        }
+
+        .stat-label {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+
+        /* ====== NOUVELLE TABLE UTILISATEURS ====== */
+        .table-container {
+          background: #ffffff;
+          border-radius: 16px;
+          border: 1px solid var(--card-border);
+          overflow: hidden;
+          margin-bottom: 32px;
+        }
+
+        .table-header {
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--card-border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--hover-bg);
+        }
+
+        .table-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .data-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .data-table th {
+          padding: 16px 20px;
+          text-align: left;
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          background: #f9fafb;
+          border-bottom: 1px solid var(--card-border);
+        }
+
+        .data-table td {
+          padding: 16px 20px;
+          border-bottom: 1px solid #f3f4f6;
+          font-size: 14px;
+        }
+
+        .data-table tr:hover td {
+          background: var(--hover-bg);
+        }
+
+        .user-avatar-small {
+          width: 40px;
+          height: 40px;
+          background: #000000;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 16px;
+        }
+
+        .user-name {
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+
+        .user-email {
+          font-size: 13px;
+          color: var(--text-secondary);
+        }
+
+        .status-badge {
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-size: 13px;
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .action-button {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .action-button.activate {
+          background: #f0fdf4;
+          color: #166534;
+          border: 1px solid #dcfce7;
+        }
+
+        .action-button.activate:hover {
+          background: #166534;
+          color: #ffffff;
+        }
+
+        .action-button.deactivate {
+          background: #fef2f2;
+          color: #991b1b;
+          border: 1px solid #fee2e2;
+        }
+
+        .action-button.deactivate:hover {
+          background: #991b1b;
+          color: #ffffff;
+        }
+
+        /* ====== PROFIL ADMIN ====== */
+        .profile-container {
+          background: #ffffff;
+          border-radius: 16px;
+          border: 1px solid var(--card-border);
+          overflow: hidden;
+          margin-bottom: 32px;
+        }
+
+        .profile-cover {
+          height: 100px;
+          background: linear-gradient(135deg, #000000 0%, #333333 100%);
+        }
+
+        .profile-content {
+          padding: 0 32px 32px;
+          margin-top: -50px;
+        }
+
+        .profile-avatar-large {
+          width: 100px;
+          height: 100px;
+          background: #ffffff;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #000000;
+          font-size: 40px;
+          font-weight: 800;
+          border: 4px solid white;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+          margin-bottom: 20px;
+        }
+
+        .profile-name {
+          font-size: 28px;
+          font-weight: 900;
+          color: var(--text-primary);
+          margin-bottom: 8px;
+        }
+
+        .profile-role {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background: #f3f4f6;
+          border-radius: 30px;
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 24px;
+        }
+
+        .profile-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 24px;
+        }
+
+        .profile-field {
+          margin-bottom: 16px;
+        }
+
+        .profile-label {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          margin-bottom: 8px;
+        }
+
+        .profile-value {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--text-primary);
+          padding: 12px 16px;
+          background: #f9fafb;
+          border-radius: 8px;
+          border: 1px solid var(--card-border);
+        }
+
+        /* ====== ANCIENS STYLES ====== */
         .dashboard-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 28px; /* Augmenté */
+          margin-bottom: 28px;
         }
 
         .header-title {
-          font-size: 28px; /* Augmenté */
-          font-weight: 900; /* Plus gras */
+          font-size: 28px;
+          font-weight: 900;
           color: var(--text-primary);
           margin-bottom: 6px;
-          letter-spacing: -0.5px;
         }
 
         .header-subtitle {
-          font-size: 16px; /* TAILLE AUGMENTÉE */
+          font-size: 16px;
           color: var(--text-secondary);
           font-weight: 500;
-          line-height: 1.5;
         }
 
         .filters-container {
           display: flex;
-          gap: 12px; /* Espacement augmenté */
+          gap: 12px;
           align-items: center;
         }
 
@@ -794,20 +1000,19 @@ export default function AdminDashboard() {
           gap: 4px;
           background: #ffffff;
           border: 1px solid var(--card-border);
-          border-radius: 8px; /* Augmenté */
+          border-radius: 8px;
           padding: 4px;
         }
 
         .period-btn {
-          padding: 8px 16px; /* Augmenté */
+          padding: 8px 16px;
           border: none;
           background: none;
-          border-radius: 6px; /* Augmenté */
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          border-radius: 6px;
+          font-size: 14px;
           font-weight: 600;
           color: var(--text-secondary);
           cursor: pointer;
-          transition: all 0.2s ease;
         }
 
         .period-btn:hover {
@@ -818,58 +1023,46 @@ export default function AdminDashboard() {
         .period-btn.active {
           background: #000000;
           color: #ffffff;
-          font-weight: 700; /* Plus gras */
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .refresh-btn {
-          padding: 10px 16px; /* Augmenté */
+          padding: 10px 16px;
           border: 1px solid var(--card-border);
           background: #ffffff;
-          border-radius: 8px; /* Augmenté */
+          border-radius: 8px;
           color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 8px; /* Espacement augmenté */
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          gap: 8px;
+          font-size: 14px;
           font-weight: 600;
-          transition: all 0.3s ease;
         }
 
         .refresh-btn:hover {
           background: var(--hover-bg);
-          border-color: #d1d5db;
-          transform: translateY(-1px);
         }
 
-        .refresh-btn:active {
-          transform: translateY(0);
-        }
-
-        /* Tabs navigation */
         .tabs-navigation {
           display: flex;
           gap: 6px;
-          margin-bottom: 28px; /* Augmenté */
-          border-bottom: 2px solid var(--card-border); /* Épaisseur augmentée */
-          padding-bottom: 0;
+          margin-bottom: 28px;
+          border-bottom: 2px solid var(--card-border);
         }
 
         .tab-btn {
-          padding: 14px 24px; /* Augmenté */
+          padding: 14px 24px;
           border: none;
           background: none;
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
+          font-size: 15px;
+          font-weight: 700;
           color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 8px; /* Espacement augmenté */
-          border-bottom: 3px solid transparent; /* Épaisseur augmentée */
+          gap: 8px;
+          border-bottom: 3px solid transparent;
           margin-bottom: -2px;
-          transition: all 0.3s ease;
         }
 
         .tab-btn:hover {
@@ -882,120 +1075,91 @@ export default function AdminDashboard() {
           border-bottom-color: #000000;
         }
 
-        /* KPIs Grid */
         .kpis-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Largeur minimum augmentée */
-          gap: 20px; /* Espacement augmenté */
-          margin-bottom: 28px; /* Augmenté */
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 20px;
+          margin-bottom: 28px;
         }
 
         .kpi-card {
           background: #ffffff;
-          border-radius: 12px; /* Augmenté */
-          padding: 24px; /* Augmenté */
+          border-radius: 12px;
+          padding: 24px;
           border: 1px solid var(--card-border);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s ease;
           cursor: pointer;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .kpi-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 4px; /* Épaisseur augmentée */
-          background: #000000;
-          transition: transform 0.3s ease;
-        }
-
-        .kpi-card:hover::before {
-          transform: scaleX(1.05);
         }
 
         .kpi-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-          border-color: #d1d5db;
         }
 
         .kpi-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 20px; /* Augmenté */
+          margin-bottom: 20px;
         }
 
         .kpi-icon-wrapper {
-          width: 48px; /* Augmenté */
-          height: 48px; /* Augmenté */
-          border-radius: 10px; /* Augmenté */
+          width: 48px;
+          height: 48px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           background: var(--hover-bg);
           color: var(--text-primary);
           border: 1px solid var(--card-border);
-          transition: all 0.3s ease;
         }
 
         .kpi-card:hover .kpi-icon-wrapper {
           background: #000000;
           color: #ffffff;
-          transform: scale(1.05);
         }
 
         .kpi-value {
-          font-size: 32px; /* Augmenté */
-          font-weight: 900; /* Plus gras */
+          font-size: 32px;
+          font-weight: 900;
           color: var(--text-primary);
           margin-bottom: 6px;
-          line-height: 1;
-          letter-spacing: -0.5px;
         }
 
         .kpi-label {
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          font-size: 14px;
           color: var(--text-secondary);
-          margin-bottom: 12px; /* Espacement augmenté */
+          margin-bottom: 12px;
           font-weight: 600;
         }
 
         .kpi-trend {
           display: flex;
           align-items: center;
-          gap: 6px; /* Espacement augmenté */
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          gap: 6px;
+          font-size: 13px;
           font-weight: 700;
-          padding: 6px 12px; /* Augmenté */
-          border-radius: 16px; /* Augmenté */
+          padding: 6px 12px;
+          border-radius: 16px;
           background: var(--hover-bg);
           width: fit-content;
         }
 
-        .trend-up {
-          color: #000000;
-        }
+        .trend-up { color: #000000; }
+        .trend-down { color: #666666; }
 
-        .trend-down {
-          color: #666666;
-        }
-
-        /* Charts Grid */
         .charts-grid {
           display: grid;
           grid-template-columns: 2fr 1fr;
-          gap: 24px; /* Espacement augmenté */
-          margin-bottom: 28px; /* Augmenté */
+          gap: 24px;
+          margin-bottom: 28px;
         }
 
         .chart-container {
           background: #ffffff;
-          border-radius: 12px; /* Augmenté */
-          padding: 24px; /* Augmenté */
+          border-radius: 12px;
+          padding: 24px;
           border: 1px solid var(--card-border);
         }
 
@@ -1003,291 +1167,120 @@ export default function AdminDashboard() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px; /* Augmenté */
+          margin-bottom: 24px;
         }
 
         .chart-title {
-          font-size: 18px; /* Augmenté */
-          font-weight: 800; /* Plus gras */
+          font-size: 18px;
+          font-weight: 800;
           color: var(--text-primary);
-          letter-spacing: -0.3px;
         }
 
         .chart-selector {
-          padding: 8px 16px; /* Augmenté */
+          padding: 8px 16px;
           border: 1px solid var(--card-border);
-          border-radius: 6px; /* Augmenté */
+          border-radius: 6px;
           background: #ffffff;
           color: var(--text-secondary);
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s ease;
-          font-weight: 500;
-        }
-
-        .chart-selector:focus {
-          border-color: #000000;
-          outline: none;
-          box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
         }
 
         .chart-placeholder {
-          height: 280px; /* Hauteur augmentée */
+          height: 280px;
           background: #f9fafb;
-          border-radius: 8px; /* Augmenté */
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: var(--text-secondary);
-          font-size: 15px; /* TAILLE AUGMENTÉE */
           position: relative;
           overflow: hidden;
         }
 
-        /* Tables Grid - Optimisé pour éviter le débordement */
         .tables-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); /* Largeur minimum augmentée */
-          gap: 24px; /* Espacement augmenté */
-          margin-bottom: 28px; /* Augmenté */
-        }
-
-        .table-container {
-          background: #ffffff;
-          border-radius: 12px; /* Augmenté */
-          border: 1px solid var(--card-border);
-          overflow: hidden;
-          max-height: 460px; /* Hauteur augmentée */
-          display: flex;
-          flex-direction: column;
-        }
-
-        .table-header {
-          padding: 20px 24px; /* Augmenté */
-          border-bottom: 1px solid var(--card-border);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: var(--hover-bg);
-          flex-shrink: 0;
-        }
-
-        .table-title {
-          font-size: 18px; /* Augmenté */
-          font-weight: 800; /* Plus gras */
-          color: var(--text-primary);
-          display: flex;
-          align-items: center;
-          gap: 10px; /* Espacement augmenté */
-          letter-spacing: -0.3px;
+          grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+          gap: 24px;
+          margin-bottom: 28px;
         }
 
         .view-all {
           color: var(--primary-color);
-          font-size: 14px; /* TAILLE AUGMENTÉE */
+          font-size: 14px;
           font-weight: 700;
-          text-decoration: none;
           display: flex;
           align-items: center;
-          gap: 6px; /* Espacement augmenté */
+          gap: 6px;
           cursor: pointer;
-          padding: 6px 12px; /* Augmenté */
-          border-radius: 6px; /* Augmenté */
-          transition: all 0.2s ease;
-        }
-
-        .view-all:hover {
-          background: var(--hover-bg);
-          transform: translateX(2px);
-        }
-
-        .data-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px; /* TAILLE AUGMENTÉE */
-          flex: 1;
-          overflow-y: auto;
-        }
-
-        .data-table th {
-          padding: 16px 20px; /* Augmenté */
-          text-align: left;
-          font-size: 13px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
-          color: var(--text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-          background: #f9fafb;
-          border-bottom: 1px solid var(--card-border);
-          position: sticky;
-          top: 0;
-          z-index: 1;
-        }
-
-        .data-table td {
-          padding: 16px 20px; /* Augmenté */
-          border-bottom: 1px solid #f3f4f6;
-          font-size: 14px; /* TAILLE AUGMENTÉE */
-          transition: background 0.2s ease;
-          vertical-align: top;
-        }
-
-        .data-table tr:last-child td {
-          border-bottom: none;
-        }
-
-        .data-table tr:hover td {
-          background: var(--hover-bg);
         }
 
         .user-info {
           display: flex;
           align-items: center;
-          gap: 12px; /* Espacement augmenté */
-          min-width: 0;
-        }
-
-        .user-avatar-small {
-          width: 40px; /* Augmenté */
-          height: 40px; /* Augmenté */
-          background: #000000;
-          border-radius: 8px; /* Augmenté */
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700; /* Plus gras */
-          color: #ffffff;
-          font-size: 16px; /* Augmenté */
-          flex-shrink: 0;
-          transition: transform 0.2s ease;
-        }
-
-        .data-table tr:hover .user-avatar-small {
-          transform: scale(1.05);
-        }
-
-        .user-name {
-          font-weight: 700; /* Plus gras */
-          color: var(--text-primary);
-          font-size: 14px; /* TAILLE AUGMENTÉE */
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        }
-
-        .user-email {
-          font-size: 13px; /* TAILLE AUGMENTÉE */
-          color: var(--text-secondary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 200px;
-        }
-
-        .status-badge {
-          padding: 6px 12px; /* Augmenté */
-          border-radius: 16px; /* Augmenté */
-          font-size: 13px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
-          display: inline-flex;
-          align-items: center;
-          gap: 6px; /* Espacement augmenté */
-          border: 1px solid transparent;
-          min-width: 80px; /* Largeur minimum augmentée */
-          justify-content: center;
-          white-space: nowrap;
-          transition: all 0.2s ease;
-        }
-
-        .data-table tr:hover .status-badge {
-          transform: scale(1.05);
+          gap: 12px;
         }
 
         .document-count {
-          font-weight: 800; /* Plus gras */
+          font-weight: 800;
           color: var(--text-primary);
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-        }
-
-        .document-category {
-          font-size: 13px; /* TAILLE AUGMENTÉE */
-          color: var(--text-secondary);
+          font-size: 15px;
         }
 
         .payment-amount {
-          font-weight: 800; /* Plus gras */
+          font-weight: 800;
           color: var(--text-primary);
-          font-size: 15px; /* TAILLE AUGMENTÉE */
+          font-size: 15px;
         }
 
         .payment-method {
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          font-size: 13px;
           color: var(--text-secondary);
           display: flex;
           align-items: center;
-          gap: 6px; /* Espacement augmenté */
+          gap: 6px;
         }
 
-        /* Quick Actions */
         .quick-actions {
           background: #ffffff;
-          border-radius: 12px; /* Augmenté */
-          padding: 28px; /* Augmenté */
+          border-radius: 12px;
+          padding: 28px;
           border: 1px solid var(--card-border);
+          margin-top: 28px;
         }
 
         .actions-title {
-          font-size: 22px; /* Augmenté */
-          font-weight: 900; /* Plus gras */
+          font-size: 22px;
+          font-weight: 900;
           color: var(--text-primary);
-          margin-bottom: 24px; /* Augmenté */
+          margin-bottom: 24px;
           display: flex;
           align-items: center;
-          gap: 10px; /* Espacement augmenté */
-          letter-spacing: -0.5px;
+          gap: 10px;
         }
 
         .actions-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Largeur minimum augmentée */
-          gap: 16px; /* Espacement augmenté */
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 16px;
         }
 
         .action-btn {
           display: flex;
           align-items: center;
-          gap: 16px; /* Espacement augmenté */
-          padding: 20px; /* Augmenté */
+          gap: 16px;
+          padding: 20px;
           background: #f9fafb;
           border: 1px solid var(--card-border);
-          border-radius: 12px; /* Augmenté */
+          border-radius: 12px;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .action-btn::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
-          transition: left 0.6s;
-        }
-
-        .action-btn:hover::before {
-          left: 100%;
+          transition: all 0.3s ease;
         }
 
         .action-btn:hover {
           background: #000000;
           border-color: #000000;
           transform: translateY(-4px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         }
 
         .action-btn:hover .action-text {
@@ -1295,176 +1288,37 @@ export default function AdminDashboard() {
         }
 
         .action-icon {
-          width: 44px; /* Augmenté */
-          height: 44px; /* Augmenté */
-          border-radius: 10px; /* Augmenté */
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: #ffffff;
           background: #000000;
           flex-shrink: 0;
-          transition: all 0.3s ease;
         }
 
         .action-btn:hover .action-icon {
           background: #ffffff;
           color: #000000;
-          transform: scale(1.1) rotate(5deg);
         }
 
         .action-text {
-          font-size: 15px; /* TAILLE AUGMENTÉE */
-          font-weight: 700; /* Plus gras */
+          font-size: 15px;
+          font-weight: 700;
           color: var(--text-primary);
-          flex: 1;
           transition: color 0.3s ease;
         }
 
-        /* Responsive */
-        @media (max-width: 1200px) {
-          .sidebar {
-            position: fixed;
-            left: ${sidebarOpen ? '0' : '-280px'};
-            height: 100vh;
-            z-index: 50;
-            box-shadow: ${sidebarOpen ? '4px 0 24px rgba(0, 0, 0, 0.15)' : 'none'};
-          }
-
-          .mobile-menu-toggle {
-            display: flex;
-          }
-
-          .search-bar {
-            width: 280px;
-          }
-          
-          .charts-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .tables-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .user-dropdown-menu {
-            position: fixed;
-            top: 72px;
-            right: 20px;
-            left: auto;
-            width: calc(100vw - 40px);
-            max-width: 300px;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .topbar {
-            padding: 0 20px;
-          }
-
-          .content-area {
-            padding: 20px;
-          }
-
-          .search-bar {
-            display: none;
-          }
-
-          .kpis-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
-          .charts-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .tables-grid {
-            grid-template-columns: 1fr;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          }
-
-          .actions-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .filters-container {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 16px;
-          }
-
-          .user-details-topbar {
-            display: none;
-          }
-          
-          .header-title {
-            font-size: 24px;
-          }
-          
-          .kpi-value {
-            font-size: 26px;
-          }
-          
-          .tables-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .kpis-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .tables-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .header-title {
-            font-size: 22px;
-          }
-          
-          .kpi-value {
-            font-size: 24px;
-          }
-        }
-
-        /* ====== Overlay pour mobile ====== */
-        .sidebar-overlay {
-          display: none;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 45;
-          backdrop-filter: blur(4px);
-          animation: overlayFade 0.3s ease;
-        }
-
-        @keyframes overlayFade {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @media (max-width: 1200px) {
-          .sidebar-overlay {
-            display: ${sidebarOpen ? 'block' : 'none'};
-          }
-        }
-
-        /* ====== Chart bars simulation ====== */
         .chart-bars {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          height: 240px; /* Hauteur augmentée */
+          height: 240px;
           padding: 20px 0;
           gap: 12px;
+          width: 100%;
         }
 
         .chart-bar {
@@ -1488,7 +1342,7 @@ export default function AdminDashboard() {
           left: 0;
           right: 0;
           text-align: center;
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          font-size: 13px;
           font-weight: 600;
           color: var(--text-secondary);
         }
@@ -1499,7 +1353,7 @@ export default function AdminDashboard() {
           left: 0;
           right: 0;
           text-align: center;
-          font-size: 13px; /* TAILLE AUGMENTÉE */
+          font-size: 13px;
           font-weight: 700;
           color: var(--text-primary);
           background: #ffffff;
@@ -1514,37 +1368,60 @@ export default function AdminDashboard() {
           opacity: 1;
         }
 
-        /* ====== Focus visible pour l'accessibilité ====== */
-        button:focus-visible,
-        input:focus-visible,
-        select:focus-visible {
-          outline: 3px solid #000000;
-          outline-offset: 2px;
-          border-radius: 3px;
+        .sidebar-overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 45;
+          backdrop-filter: blur(4px);
         }
 
-        /* ====== Scrollbar styling amélioré ====== */
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
+        @media (max-width: 1200px) {
+          .sidebar {
+            position: fixed;
+            left: ${sidebarOpen ? '0' : '-280px'};
+            height: 100vh;
+            z-index: 50;
+          }
+          .sidebar-overlay {
+            display: ${sidebarOpen ? 'block' : 'none'};
+          }
+          .charts-grid {
+            grid-template-columns: 1fr;
+          }
+          .tables-grid {
+            grid-template-columns: 1fr;
+          }
+          .cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
 
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
+        @media (max-width: 768px) {
+          .cards-grid {
+            grid-template-columns: 1fr;
+          }
+          .profile-grid {
+            grid-template-columns: 1fr;
+          }
+          .user-details-topbar {
+            display: none;
+          }
+          .kpis-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
 
-        ::-webkit-scrollbar-thumb {
-          background: #d1d5db;
-          border-radius: 4px;
-          transition: background 0.3s ease;
+        @media (max-width: 480px) {
+          .kpis-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
-
-        /* Animation pour les éléments qui apparaissent */
         .kpi-card, .chart-container, .table-container, .quick-actions {
           animation: fadeInUp 0.5s ease forwards;
           opacity: 0;
@@ -1552,89 +1429,34 @@ export default function AdminDashboard() {
         }
 
         @keyframes fadeInUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Animation pour le sidebar */
-        .sidebar {
-          animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
         }
-
-        @keyframes slideIn {
-          from {
-            transform: translateX(-100%);
-          }
-          to {
-            transform: translateX(0);
-          }
+        ::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
         }
-
-        /* Hover effects améliorés */
-        .menu-item, .action-btn, .kpi-card {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        ::-webkit-scrollbar-thumb {
+          background: #d1d5db;
+          border-radius: 4px;
         }
-
-        /* Effet de profondeur */
-        .kpi-card:hover, .action-btn:hover, .chart-container:hover, .table-container:hover {
-          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Typographie améliorée */
-        h1, h2, h3, h4, h5, h6 {
-          font-weight: 800;
-          letter-spacing: -0.3px;
-        }
-
-        /* Espacements améliorés */
-        .dashboard-header, .tabs-navigation, .kpis-grid, .charts-grid, .tables-grid, .quick-actions {
-          margin-bottom: 32px;
-        }
-
-        /* Bordures et rayons améliorés */
-        .chart-container, .table-container, .quick-actions, .kpi-card {
-          border-radius: 16px;
-        }
-
-        .search-input, .chart-selector, .period-btn, .refresh-btn {
-          border-radius: 10px;
-        }
-
-        /* Icônes plus grandes */
-        .menu-icon, .dropdown-icon, .search-icon, .notification-btn svg {
-          width: 20px;
-          height: 20px;
-        }
-
-        .table-title svg, .actions-title svg {
-          width: 22px;
-          height: 22px;
-        }
-
-        .kpi-icon-wrapper svg {
-          width: 24px;
-          height: 24px;
-        }
-
-        .action-icon svg {
-          width: 22px;
-          height: 22px;
+        ::-webkit-scrollbar-thumb:hover {
+          background: #9ca3af;
         }
         `}
       </style>
 
       <div className="dashboard-container">
-        {/* Overlay pour mobile avec animation */}
+        {/* Overlay mobile */}
         {sidebarOpen && (
-          <div 
-            className="sidebar-overlay" 
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* Sidebar avec fond noir et animation améliorée */}
+        {/* ====== SIDEBAR ====== */}
         <div className="sidebar">
           <div className="sidebar-header">
             <div className="logo-container">
@@ -1646,119 +1468,80 @@ export default function AdminDashboard() {
             <button 
               className="menu-toggle"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
             >
               {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
 
+          {/* MENU SIMPLIFIÉ - 4 ITEMS SEULEMENT */}
           <div className="sidebar-menu">
             {menuItems.map(item => (
               <div
                 key={item.id}
                 className={`menu-item ${activeMenu === item.id ? 'active' : ''}`}
-                onClick={() => setActiveMenu(item.id)}
+                onClick={() => handleMenuClick(item.id)}
               >
-                <item.icon 
-                  className="menu-icon" 
-                  size={20} 
-                  style={{ color: activeMenu === item.id ? '#ffffff' : '#cccccc' }}
-                />
+                <item.icon className="menu-icon" size={20} />
                 <span className="menu-label">{item.label}</span>
               </div>
             ))}
           </div>
 
-          {/* Section utilisateur dans la sidebar */}
           <div className="user-section">
-            <div className="user-info-sidebar">
-              <div className="user-avatar">
-                {dashboardData.user.avatar}
-              </div>
-              <div className="user-details-sidebar">
-                <div className="user-name-sidebar">{dashboardData.user.name}</div>
-                <div className="user-role-sidebar">{dashboardData.user.role}</div>
-              </div>
+            <div className="user-avatar">
+              {adminData.avatar}
+            </div>
+            <div className="user-details-sidebar">
+              <div className="user-name-sidebar">{adminData.name}</div>
+              <div className="user-role-sidebar">{adminData.role}</div>
             </div>
           </div>
         </div>
 
-        {/* Main content */}
+        {/* ====== MAIN CONTENT ====== */}
         <div className="main-content">
-          {/* Topbar */}
           <div className="topbar">
-            <div className="topbar-left">
-              <h1 className="page-title">Admin Dashboard</h1>
-              <div className="search-bar">
-                <Search className="search-icon" size={20} />
-                <input 
-                  type="text" 
-                  className="search-input" 
-                  placeholder="Rechercher utilisateurs, documents..."
-                />
-              </div>
-            </div>
+            <h1 className="page-title">
+              {activeMenu === "dashboard" && "Accueil"}
+              {activeMenu === "users" && "Les utilisateurs"}
+              {activeMenu === "profile" && "Mon profil"}
+            </h1>
             <div className="topbar-right">
               <button className="notification-btn">
                 <Bell size={20} />
-                {notifications > 0 && (
-                  <span className="notification-badge"></span>
-                )}
+                {notifications > 0 && <span className="notification-badge" />}
               </button>
               
-              {/* Menu déroulant utilisateur */}
               <div className="user-dropdown-container">
                 <button 
                   className={`user-dropdown-trigger ${userDropdownOpen ? 'active' : ''}`}
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  aria-label="Menu utilisateur"
                 >
                   <div className="user-info-topbar">
                     <div className="user-avatar">
-                      {dashboardData.user.avatar}
+                      {adminData.avatar}
                     </div>
                     <div className="user-details-topbar">
-                      <div className="user-name-topbar">{dashboardData.user.name}</div>
-                      <div className="user-role-topbar">{dashboardData.user.role}</div>
+                      <div className="user-name-topbar">{adminData.name}</div>
+                      <div className="user-role-topbar">{adminData.role}</div>
                     </div>
                   </div>
-                  <ChevronDown 
-                    className={`dropdown-arrow ${userDropdownOpen ? 'open' : ''}`} 
-                    size={18} 
-                  />
+                  <ChevronDown className={`dropdown-arrow ${userDropdownOpen ? 'open' : ''}`} size={18} />
                 </button>
                 
                 <div className="user-dropdown-menu">
                   <div className="dropdown-header">
-                    <div className="dropdown-user-name">{dashboardData.user.name}</div>
-                    <div className="dropdown-user-email">{dashboardData.user.email}</div>
+                    <div className="dropdown-user-name">{adminData.name}</div>
+                    <div className="dropdown-user-email">{adminData.email}</div>
                   </div>
-                  
                   <div className="dropdown-menu-items">
-                    <div className="dropdown-item">
-                      <User className="dropdown-icon" size={18} />
+                    <div className="dropdown-item" onClick={() => setActiveMenu("profile")}>
+                      <User size={18} />
                       <span>Mon profil</span>
                     </div>
-                    <div className="dropdown-item">
-                      <SettingsIcon className="dropdown-icon" size={18} />
-                      <span>Paramètres</span>
-                    </div>
-                    <div className="dropdown-item">
-                      <Shield className="dropdown-icon" size={18} />
-                      <span>Sécurité</span>
-                    </div>
-                    
-                    <div className="dropdown-divider"></div>
-                    
-                    <div className="dropdown-item">
-                      <DownloadCloud className="dropdown-icon" size={18} />
-                      <span>Exporter les données</span>
-                    </div>
-                    
-                    <div className="dropdown-divider"></div>
-                    
-                    <div className="dropdown-item" style={{ color: '#000000', fontWeight: '700' }}>
-                      <LogOut className="dropdown-icon" size={18} />
+                    <div className="dropdown-divider" />
+                    <div className="dropdown-item" onClick={handleLogout}>
+                      <LogOut size={18} />
                       <span>Déconnexion</span>
                     </div>
                   </div>
@@ -1767,411 +1550,645 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Content area */}
           <div className="content-area">
-            {/* Header with filters */}
-            <div className="dashboard-header">
-              <div>
-                <h2 className="header-title">Supervision Plateforme</h2>
-                <p className="header-subtitle">
-                  Vue d'ensemble complète de l'activité de la plateforme
-                </p>
-              </div>
-              <div className="filters-container">
-                <div className="period-selector">
-                  {periodOptions.map(period => (
+            {/* ====== PAGE ACCUEIL ====== */}
+            {activeMenu === "dashboard" && (
+              <>
+                {/* ====== NOUVELLES FONCTIONNALITÉS ====== */}
+                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>
+                  Vue d'ensemble
+                </h2>
+                <div className="cards-grid">
+                  <div className="stat-card">
+                    <div className="stat-header">
+                      <div className="stat-icon">
+                        <Users size={28} />
+                      </div>
+                    </div>
+                    <div className="stat-value">{formatNumber(dashboardData.totalUsers)}</div>
+                    <div className="stat-label">Nombre d'utilisateurs</div>
+                  </div>
+                  
+                  <div className="stat-card">
+                    <div className="stat-header">
+                      <div className="stat-icon">
+                        <FileText size={28} />
+                      </div>
+                    </div>
+                    <div className="stat-value">{formatNumber(dashboardData.totalContracts)}</div>
+                    <div className="stat-label">Nombre de contrats</div>
+                  </div>
+                  
+                  <div className="stat-card">
+                    <div className="stat-header">
+                      <div className="stat-icon">
+                        <DollarSign size={28} />
+                      </div>
+                    </div>
+                    <div className="stat-value">{formatNumber(dashboardData.totalInvoices)}</div>
+                    <div className="stat-label">Nombre de factures</div>
+                  </div>
+                </div>
+
+                {/* ====== ANCIEN CONTENU ====== */}
+                <div className="section-divider">
+                  <span className="section-divider-title">Supervision Plateforme</span>
+                </div>
+
+                {/* Header with filters */}
+                <div className="dashboard-header">
+                  <div>
+                    <h2 className="header-title">Supervision Plateforme</h2>
+                    <p className="header-subtitle">
+                      Vue d'ensemble complète de l'activité de la plateforme
+                    </p>
+                  </div>
+                  <div className="filters-container">
+                    <div className="period-selector">
+                      {periodOptions.map(period => (
+                        <button
+                          key={period.id}
+                          className={`period-btn ${selectedPeriod === period.id ? 'active' : ''}`}
+                          onClick={() => setSelectedPeriod(period.id)}
+                        >
+                          {period.id}
+                        </button>
+                      ))}
+                    </div>
+                    <button className="refresh-btn">
+                      <RefreshCw size={16} />
+                      Actualiser
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tabs navigation */}
+                <div className="tabs-navigation">
+                  {tabOptions.map(tab => (
                     <button
-                      key={period.id}
-                      className={`period-btn ${selectedPeriod === period.id ? 'active' : ''}`}
-                      onClick={() => setSelectedPeriod(period.id)}
+                      key={tab.id}
+                      className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                      onClick={() => setActiveTab(tab.id)}
                     >
-                      {period.id}
+                      <tab.icon size={18} />
+                      {tab.label}
                     </button>
                   ))}
                 </div>
-                <button className="refresh-btn">
-                  <RefreshCw size={16} />
-                  Actualiser
-                </button>
-              </div>
-            </div>
 
-            {/* Tabs navigation */}
-            <div className="tabs-navigation">
-              {tabOptions.map(tab => (
-                <button
-                  key={tab.id}
-                  className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <tab.icon size={18} />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* KPIs Grid */}
-            <div className="kpis-grid">
-              {kpiConfigs.map((kpi, index) => (
-                <div className="kpi-card" key={index} style={{ animationDelay: `${index * 0.1}s` }}>
-                  <div className="kpi-header">
-                    <div>
-                      <div className="kpi-value">{getKPIValue(kpi.key)}</div>
-                      <div className="kpi-label">{kpi.label}</div>
-                      <div className={`kpi-trend ${kpi.trend.startsWith('+') ? 'trend-up' : 'trend-down'}`}>
-                        {kpi.trend.startsWith('+') ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        <span>{kpi.trend} ce mois</span>
-                      </div>
-                    </div>
-                    <div className="kpi-icon-wrapper">
-                      <kpi.icon size={24} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Charts Grid */}
-            <div className="charts-grid">
-              <div className="chart-container" style={{ animationDelay: '0.8s' }}>
-                <div className="chart-header">
-                  <h3 className="chart-title">Activité Journalière</h3>
-                  <select className="chart-selector" defaultValue="signatures">
-                    <option value="users">Utilisateurs</option>
-                    <option value="documents">Documents</option>
-                    <option value="signatures">Signatures</option>
-                    <option value="payments">Paiements</option>
-                  </select>
-                </div>
-                <div className="chart-placeholder">
-                  <div className="chart-bars">
-                    {dashboardData.dailyStats.map((stat, index) => (
-                      <div 
-                        key={index} 
-                        className="chart-bar" 
-                        style={{ 
-                          height: `${(stat.signatures / 2500) * 100}%`
-                        }}
-                      >
-                        <div className="chart-bar-value">{stat.signatures}</div>
-                        <div className="chart-bar-label">{stat.date}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="chart-container" style={{ animationDelay: '0.9s' }}>
-                <div className="chart-header">
-                  <h3 className="chart-title">Documents Populaires</h3>
-                </div>
-                <div className="chart-placeholder" style={{ flexDirection: 'column', gap: '16px', padding: '20px' }}>
-                  {dashboardData.popularDocuments.map(doc => (
-                    <div key={doc.id} style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                          {doc.name}
-                        </span>
-                        <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                          {doc.count.toLocaleString()}
-                        </span>
-                      </div>
-                      <div style={{ 
-                        height: '10px', 
-                        background: '#f3f4f6', 
-                        borderRadius: '6px', 
-                        overflow: 'hidden'
-                      }}>
-                        <div 
-                          style={{ 
-                            height: '100%', 
-                            background: doc.color,
-                            width: `${(doc.count / 5000) * 100}%`,
-                            borderRadius: '6px'
-                          }}
-                        />
-                      </div>
-                      <div style={{ 
-                        fontSize: '13px', 
-                        color: 'var(--text-secondary)', 
-                        marginTop: '6px',
-                        fontWeight: '500'
-                      }}>
-                        {doc.category}
+                {/* KPIs Grid */}
+                <div className="kpis-grid">
+                  {kpiConfigs.map((kpi, index) => (
+                    <div className="kpi-card" key={index} style={{ animationDelay: `${index * 0.1}s` }}>
+                      <div className="kpi-header">
+                        <div>
+                          <div className="kpi-value">{getKPIValue(kpi.key)}</div>
+                          <div className="kpi-label">{kpi.label}</div>
+                          <div className={`kpi-trend ${kpi.trend.startsWith('+') ? 'trend-up' : 'trend-down'}`}>
+                            {kpi.trend.startsWith('+') ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                            <span>{kpi.trend} ce mois</span>
+                          </div>
+                        </div>
+                        <div className="kpi-icon-wrapper">
+                          <kpi.icon size={24} />
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
 
-            {/* Tables Grid - Optimisé pour éviter le débordement */}
-            <div className="tables-grid">
-              {/* Derniers utilisateurs actifs */}
-              <div className="table-container" style={{ animationDelay: '1s' }}>
-                <div className="table-header">
-                  <h3 className="table-title">
-                    <Users size={18} />
-                    Derniers Utilisateurs Actifs
-                  </h3>
-                  <div className="view-all">
-                    <span>Voir tout</span>
-                    <Eye size={14} />
-                  </div>
-                </div>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '45%' }}>Utilisateur</th>
-                      <th style={{ width: '25%' }}>Dernière activité</th>
-                      <th style={{ width: '30%' }}>Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboardData.recentActiveUsers.map(user => (
-                      <tr key={user.id}>
-                        <td>
-                          <div className="user-info">
-                            <div className="user-avatar-small">
-                              {user.name.charAt(0)}
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <div className="user-name" title={user.name}>{user.name}</div>
-                              <div className="user-email" title={user.email}>{user.email}</div>
-                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{user.role}</div>
-                            </div>
+                {/* Charts Grid */}
+                <div className="charts-grid">
+                  <div className="chart-container" style={{ animationDelay: '0.8s' }}>
+                    <div className="chart-header">
+                      <h3 className="chart-title">Activité Journalière</h3>
+                      <select className="chart-selector" defaultValue="signatures">
+                        <option value="users">Utilisateurs</option>
+                        <option value="documents">Documents</option>
+                        <option value="signatures">Signatures</option>
+                        <option value="payments">Paiements</option>
+                      </select>
+                    </div>
+                    <div className="chart-placeholder">
+                      <div className="chart-bars">
+                        {dashboardData.dailyStats.map((stat, index) => (
+                          <div 
+                            key={index} 
+                            className="chart-bar" 
+                            style={{ height: `${(stat.signatures / 2500) * 100}%` }}
+                          >
+                            <div className="chart-bar-value">{stat.signatures}</div>
+                            <div className="chart-bar-label">{stat.date}</div>
                           </div>
-                        </td>
-                        <td style={{ fontWeight: '500' }}>{user.lastActive}</td>
-                        <td>
-                          <span 
-                            className="status-badge"
-                            style={{
-                              background: statusColors[user.status].bg,
-                              color: statusColors[user.status].text,
-                              borderColor: statusColors[user.status].border
-                            }}
-                          >
-                            {user.status === "online" ? <Check size={12} /> : <EyeOff size={12} />}
-                            {user.status === "online" ? "En ligne" : "Hors ligne"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Derniers abonnements */}
-              <div className="table-container" style={{ animationDelay: '1.1s' }}>
-                <div className="table-header">
-                  <h3 className="table-title">
-                    <CreditCard size={18} />
-                    Derniers Abonnements
-                  </h3>
-                  <div className="view-all">
-                    <span>Voir tout</span>
-                    <Eye size={14} />
+                  <div className="chart-container" style={{ animationDelay: '0.9s' }}>
+                    <div className="chart-header">
+                      <h3 className="chart-title">Documents Populaires</h3>
+                    </div>
+                    <div className="chart-placeholder" style={{ flexDirection: 'column', gap: '16px', padding: '20px' }}>
+                      {dashboardData.popularDocuments.map(doc => (
+                        <div key={doc.id} style={{ width: '100%' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                              {doc.name}
+                            </span>
+                            <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                              {doc.count.toLocaleString()}
+                            </span>
+                          </div>
+                          <div style={{ height: '10px', background: '#f3f4f6', borderRadius: '6px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: doc.color, width: `${(doc.count / 5000) * 100}%`, borderRadius: '6px' }} />
+                          </div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', fontWeight: '500' }}>
+                            {doc.category}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40%' }}>Client</th>
-                      <th style={{ width: '30%' }}>Montant</th>
-                      <th style={{ width: '30%' }}>Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboardData.recentSubscriptions.map(sub => (
-                      <tr key={sub.id}>
-                        <td>
-                          <div className="user-name" title={sub.user}>{sub.user}</div>
-                          <div className="user-email" title={sub.plan} style={{ fontWeight: '500' }}>{sub.plan}</div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{sub.date}</div>
-                        </td>
-                        <td>
-                          <div className="payment-amount">{formatCurrency(sub.amount)}</div>
-                        </td>
-                        <td>
-                          <span 
-                            className="status-badge"
-                            style={{
-                              background: statusColors[sub.status].bg,
-                              color: statusColors[sub.status].text,
-                              borderColor: statusColors[sub.status].border
-                            }}
-                          >
-                            {sub.status === "active" ? <Check size={12} /> : 
-                             sub.status === "pending" ? <Clock size={12} /> : 
-                             <XIcon size={12} />}
-                            {sub.status === "active" ? "Actif" : 
-                             sub.status === "pending" ? "En attente" : 
-                             "Annulé"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
 
-            {/* Paiements récents et Alertes de sécurité */}
-            <div className="tables-grid">
-              {/* Paiements récents */}
-              <div className="table-container" style={{ animationDelay: '1.2s' }}>
-                <div className="table-header">
-                  <h3 className="table-title">
-                    <DollarSign size={18} />
-                    Paiements Récents
-                  </h3>
-                  <div className="view-all">
-                    <span>Voir tout</span>
-                    <Eye size={14} />
+                {/* Tables Grid */}
+                <div className="tables-grid">
+                  {/* Derniers utilisateurs actifs */}
+                  <div className="table-container" style={{ animationDelay: '1s' }}>
+                    <div className="table-header">
+                      <h3 className="table-title">
+                        <Users size={18} />
+                        Derniers Utilisateurs Actifs
+                      </h3>
+                      <div className="view-all">
+                        <span>Voir tout</span>
+                        <Eye size={14} />
+                      </div>
+                    </div>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '45%' }}>Utilisateur</th>
+                          <th style={{ width: '25%' }}>Dernière activité</th>
+                          <th style={{ width: '30%' }}>Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.recentActiveUsers.map(user => (
+                          <tr key={user.id}>
+                            <td>
+                              <div className="user-info">
+                                <div className="user-avatar-small">
+                                  {user.name.charAt(0)}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div className="user-name" title={user.name}>{user.name}</div>
+                                  <div className="user-email" title={user.email}>{user.email}</div>
+                                  <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{user.role}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ fontWeight: '500' }}>{user.lastActive}</td>
+                            <td>
+                              <span 
+                                className="status-badge"
+                                style={{
+                                  background: statusColors[user.status].bg,
+                                  color: statusColors[user.status].text,
+                                  borderColor: statusColors[user.status].border
+                                }}
+                              >
+                                {user.status === "online" ? <Check size={12} /> : <EyeOff size={12} />}
+                                {user.status === "online" ? "En ligne" : "Hors ligne"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Derniers abonnements */}
+                  <div className="table-container" style={{ animationDelay: '1.1s' }}>
+                    <div className="table-header">
+                      <h3 className="table-title">
+                        <CreditCard size={18} />
+                        Derniers Abonnements
+                      </h3>
+                      <div className="view-all">
+                        <span>Voir tout</span>
+                        <Eye size={14} />
+                      </div>
+                    </div>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40%' }}>Client</th>
+                          <th style={{ width: '30%' }}>Montant</th>
+                          <th style={{ width: '30%' }}>Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.recentSubscriptions.map(sub => (
+                          <tr key={sub.id}>
+                            <td>
+                              <div className="user-name" title={sub.user}>{sub.user}</div>
+                              <div className="user-email" title={sub.plan} style={{ fontWeight: '500' }}>{sub.plan}</div>
+                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{sub.date}</div>
+                            </td>
+                            <td>
+                              <div className="payment-amount">{formatCurrency(sub.amount)}</div>
+                            </td>
+                            <td>
+                              <span 
+                                className="status-badge"
+                                style={{
+                                  background: statusColors[sub.status].bg,
+                                  color: statusColors[sub.status].text,
+                                  borderColor: statusColors[sub.status].border
+                                }}
+                              >
+                                {sub.status === "active" ? <Check size={12} /> : 
+                                 sub.status === "pending" ? <Clock size={12} /> : 
+                                 <XIcon size={12} />}
+                                {sub.status === "active" ? "Actif" : 
+                                 sub.status === "pending" ? "En attente" : 
+                                 "Annulé"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40%' }}>Client</th>
-                      <th style={{ width: '30%' }}>Montant</th>
-                      <th style={{ width: '30%' }}>Statut</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboardData.recentPayments.map(payment => {
-                      const MethodIcon = payment.methodIcon || CreditCard;
-                      return (
-                        <tr key={payment.id}>
-                          <td>
-                            <div className="user-name" title={payment.user}>{payment.user}</div>
-                            <div className="payment-method" title={payment.method} style={{ fontWeight: '500' }}>
-                              <MethodIcon size={12} />
-                              {payment.method}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{payment.date}</div>
-                          </td>
-                          <td>
-                            <div className="payment-amount">{formatCurrency(payment.amount)}</div>
-                          </td>
+
+                {/* Paiements récents et Alertes de sécurité */}
+                <div className="tables-grid">
+                  {/* Paiements récents */}
+                  <div className="table-container" style={{ animationDelay: '1.2s' }}>
+                    <div className="table-header">
+                      <h3 className="table-title">
+                        <DollarSign size={18} />
+                        Paiements Récents
+                      </h3>
+                      <div className="view-all">
+                        <span>Voir tout</span>
+                        <Eye size={14} />
+                      </div>
+                    </div>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40%' }}>Client</th>
+                          <th style={{ width: '30%' }}>Montant</th>
+                          <th style={{ width: '30%' }}>Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.recentPayments.map(payment => {
+                          const MethodIcon = payment.methodIcon || CreditCard;
+                          return (
+                            <tr key={payment.id}>
+                              <td>
+                                <div className="user-name" title={payment.user}>{payment.user}</div>
+                                <div className="payment-method" title={payment.method} style={{ fontWeight: '500' }}>
+                                  <MethodIcon size={12} />
+                                  {payment.method}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{payment.date}</div>
+                              </td>
+                              <td>
+                                <div className="payment-amount">{formatCurrency(payment.amount)}</div>
+                              </td>
+                              <td>
+                                <span 
+                                  className="status-badge"
+                                  style={{
+                                    background: statusColors[payment.status].bg,
+                                    color: statusColors[payment.status].text,
+                                    borderColor: statusColors[payment.status].border
+                                  }}
+                                >
+                                  {payment.status === "completed" ? <Check size={12} /> : <Clock size={12} />}
+                                  {payment.status === "completed" ? "Complété" : "En attente"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Alertes de sécurité */}
+                  <div className="table-container" style={{ animationDelay: '1.3s' }}>
+                    <div className="table-header">
+                      <h3 className="table-title">
+                        <Shield size={18} />
+                        Alertes de Sécurité
+                      </h3>
+                      <div className="view-all">
+                        <span>Voir tout</span>
+                        <Eye size={14} />
+                      </div>
+                    </div>
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '40%' }}>Type</th>
+                          <th style={{ width: '40%' }}>Utilisateur</th>
+                          <th style={{ width: '20%' }}>Sévérité</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboardData.securityAlerts.map(alert => (
+                          <tr key={alert.id}>
+                            <td>
+                              <div className="user-name" title={alert.type}>{alert.type}</div>
+                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{alert.time}</div>
+                            </td>
+                            <td>
+                              <div className="user-email" title={alert.user} style={{ fontWeight: '500' }}>{alert.user}</div>
+                            </td>
+                            <td>
+                              <span 
+                                className="status-badge"
+                                style={{
+                                  background: statusColors[alert.severity].bg,
+                                  color: statusColors[alert.severity].text,
+                                  borderColor: statusColors[alert.severity].border
+                                }}
+                              >
+                                {getSeverityIcon(alert.severity)}
+                                {alert.severity === "high" ? "Haute" : 
+                                 alert.severity === "medium" ? "Moyenne" : 
+                                 "Basse"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="quick-actions" style={{ animationDelay: '1.4s' }}>
+                  <h3 className="actions-title">
+                    <Zap size={22} />
+                    Actions Administratives Rapides
+                  </h3>
+                  <div className="actions-grid">
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <Users size={22} />
+                      </div>
+                      <div className="action-text">Gérer utilisateurs</div>
+                    </div>
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <FileCheck size={22} />
+                      </div>
+                      <div className="action-text">Valider documents</div>
+                    </div>
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <CreditCard size={22} />
+                      </div>
+                      <div className="action-text">Gérer abonnements</div>
+                    </div>
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <Shield size={22} />
+                      </div>
+                      <div className="action-text">Audit sécurité</div>
+                    </div>
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <FileX size={22} />
+                      </div>
+                      <div className="action-text">Invalider documents</div>
+                    </div>
+                    <div className="action-btn">
+                      <div className="action-icon">
+                        <BarChart3 size={22} />
+                      </div>
+                      <div className="action-text">Rapports détaillés</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ====== PAGE UTILISATEURS ====== */}
+            {activeMenu === "users" && (
+              <>
+                {/* ====== NOUVELLE TABLE UTILISATEURS ====== */}
+                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>
+                  Gestion des utilisateurs
+                </h2>
+                <div className="table-container">
+                  <div className="table-header">
+                    <h3 className="table-title">
+                      <Users size={18} />
+                      Liste des utilisateurs
+                    </h3>
+                  </div>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Rôle</th>
+                        <th>Date d'inscription</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dashboardData.usersList.map(user => (
+                        <tr key={user.id}>
+                          <td><span className="user-name">{user.nom}</span></td>
+                          <td>{user.prenom}</td>
+                          <td><span className="user-email">{user.email}</span></td>
+                          <td>{user.telephone}</td>
+                          <td>{user.role}</td>
+                          <td>{user.dateInscription}</td>
                           <td>
                             <span 
                               className="status-badge"
                               style={{
-                                background: statusColors[payment.status].bg,
-                                color: statusColors[payment.status].text,
-                                borderColor: statusColors[payment.status].border
+                                background: statusColors[user.status].bg,
+                                color: statusColors[user.status].text,
+                                borderColor: statusColors[user.status].border
                               }}
                             >
-                              {payment.status === "completed" ? <Check size={12} /> : <Clock size={12} />}
-                              {payment.status === "completed" ? "Complété" : "En attente"}
+                              {user.status === "actif" ? <Check size={12} /> : <XIcon size={12} />}
+                              {user.status === "actif" ? "Actif" : "Inactif"}
                             </span>
                           </td>
+                          <td>
+                            {user.status === "actif" ? (
+                              <button 
+                                className="action-button deactivate"
+                                onClick={() => handleToggleUserStatus(user.id)}
+                              >
+                                <XIcon size={14} />
+                                Désactiver
+                              </button>
+                            ) : (
+                              <button 
+                                className="action-button activate"
+                                onClick={() => handleToggleUserStatus(user.id)}
+                              >
+                                <Check size={14} />
+                                Activer
+                              </button>
+                            )}
+                          </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Alertes de sécurité */}
-              <div className="table-container" style={{ animationDelay: '1.3s' }}>
-                <div className="table-header">
-                  <h3 className="table-title">
-                    <Shield size={18} />
-                    Alertes de Sécurité
-                  </h3>
-                  <div className="view-all">
-                    <span>Voir tout</span>
-                    <Eye size={14} />
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40%' }}>Type</th>
-                      <th style={{ width: '40%' }}>Utilisateur</th>
-                      <th style={{ width: '20%' }}>Sévérité</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboardData.securityAlerts.map(alert => (
-                      <tr key={alert.id}>
-                        <td>
-                          <div className="user-name" title={alert.type}>{alert.type}</div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px', fontWeight: '500' }}>{alert.time}</div>
-                        </td>
-                        <td>
-                          <div className="user-email" title={alert.user} style={{ fontWeight: '500' }}>{alert.user}</div>
-                        </td>
-                        <td>
-                          <span 
-                            className="status-badge"
-                            style={{
-                              background: statusColors[alert.severity].bg,
-                              color: statusColors[alert.severity].text,
-                              borderColor: statusColors[alert.severity].border
-                            }}
-                          >
-                            {getSeverityIcon(alert.severity)}
-                            {alert.severity === "high" ? "Haute" : 
-                             alert.severity === "medium" ? "Moyenne" : 
-                             "Basse"}
-                          </span>
-                        </td>
+
+                {/* ====== ANCIEN CONTENU UTILISATEURS ====== */}
+                <div className="section-divider">
+                  <span className="section-divider-title">Ancienne vue</span>
+                </div>
+                
+                <div className="table-container">
+                  <div className="table-header">
+                    <h3 className="table-title">
+                      <Users size={18} />
+                      Derniers Utilisateurs Actifs
+                    </h3>
+                  </div>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Utilisateur</th>
+                        <th>Dernière activité</th>
+                        <th>Statut</th>
+                        <th>Rôle</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                    </thead>
+                    <tbody>
+                      {dashboardData.recentActiveUsers.map(user => (
+                        <tr key={user.id}>
+                          <td>
+                            <div className="user-info">
+                              <div className="user-avatar-small">
+                                {user.name.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="user-name">{user.name}</div>
+                                <div className="user-email">{user.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>{user.lastActive}</td>
+                          <td>
+                            <span 
+                              className="status-badge"
+                              style={{
+                                background: statusColors[user.status].bg,
+                                color: statusColors[user.status].text,
+                                borderColor: statusColors[user.status].border
+                              }}
+                            >
+                              {user.status === "online" ? "En ligne" : "Hors ligne"}
+                            </span>
+                          </td>
+                          <td>{user.role}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
 
-            {/* Quick Actions */}
-            <div className="quick-actions" style={{ animationDelay: '1.4s' }}>
-              <h3 className="actions-title">
-                <Zap size={22} />
-                Actions Administratives Rapides
-              </h3>
-              <div className="actions-grid">
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <Users size={22} />
+            {/* ====== PAGE PROFIL ====== */}
+            {activeMenu === "profile" && (
+              <>
+                {/* ====== NOUVEAU PROFIL ====== */}
+                <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>
+                  Mon profil
+                </h2>
+                <div className="profile-container">
+                  <div className="profile-cover" />
+                  <div className="profile-content">
+                    <div className="profile-avatar-large">
+                      {adminData.avatar}
+                    </div>
+                    <div className="profile-name">{adminData.name}</div>
+                    <div className="profile-role">
+                      <Shield size={16} />
+                      {adminData.role}
+                    </div>
+                    
+                    <div className="profile-grid">
+                      <div className="profile-field">
+                        <div className="profile-label">Email</div>
+                        <div className="profile-value">{adminData.email}</div>
+                      </div>
+                      <div className="profile-field">
+                        <div className="profile-label">Téléphone</div>
+                        <div className="profile-value">{adminData.phone}</div>
+                      </div>
+                      <div className="profile-field">
+                        <div className="profile-label">Date d'inscription</div>
+                        <div className="profile-value">{adminData.createdAt}</div>
+                      </div>
+                      <div className="profile-field">
+                        <div className="profile-label">Dernière connexion</div>
+                        <div className="profile-value">{adminData.lastLogin}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="action-text">Gérer utilisateurs</div>
                 </div>
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <FileCheck size={22} />
+
+                {/* ====== ANCIEN PROFIL ====== */}
+                <div className="section-divider">
+                  <span className="section-divider-title">Ancien profil</span>
+                </div>
+                
+                <div className="profile-container">
+                  <div className="table-header">
+                    <h3 className="table-title">
+                      <User size={18} />
+                      Informations administrateur
+                    </h3>
                   </div>
-                  <div className="action-text">Valider documents</div>
-                </div>
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <CreditCard size={22} />
+                  <div style={{ padding: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+                      <div className="user-avatar-small" style={{ width: 60, height: 60, fontSize: 24 }}>
+                        {dashboardData.user.avatar}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 20, fontWeight: 800 }}>{dashboardData.user.name}</div>
+                        <div style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{dashboardData.user.role}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Email</div>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>{dashboardData.user.email}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Dernière connexion</div>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>{new Date().toLocaleString('fr-FR')}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="action-text">Gérer abonnements</div>
                 </div>
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <Shield size={22} />
-                  </div>
-                  <div className="action-text">Audit sécurité</div>
-                </div>
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <FileX size={22} />
-                  </div>
-                  <div className="action-text">Invalider documents</div>
-                </div>
-                <div className="action-btn">
-                  <div className="action-icon">
-                    <BarChart3 size={22} />
-                  </div>
-                  <div className="action-text">Rapports détaillés</div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
