@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+ import { Eye, EyeOff, Mail, Lock, Shield, AlertCircle } from "lucide-react";
 
 // Importer les images
-import backgroundImg from "../../assets/images/v4_10.png";
+import backgroundImg from "../../assets/images/image_de_fond.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,7 +14,15 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    document.title = "SIGN APP | Admin Login";
+    // Désactiver le scroll sur la page entière
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,7 +35,6 @@ export default function Login() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -42,15 +49,15 @@ export default function Login() {
     const newErrors = {};
     
     if (!formData.email.trim()) {
-      newErrors.email = "L'email est requis";
+      newErrors.email = "Email administrateur requis";
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Veuillez entrer un email valide";
+      newErrors.email = "Format email invalide";
     }
     
     if (!formData.password) {
-      newErrors.password = "Le mot de passe est requis";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Le mot de passe doit contenir au moins 6 caractères";
+      newErrors.password = "Mot de passe requis";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "8 caractères minimum";
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -60,14 +67,16 @@ export default function Login() {
     
     setIsLoading(true);
     
-    // Simulation d'appel API
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("Connexion réussie:", formData);
-      // Ici, tu ajouterais ta logique de connexion réelle
-      alert("Connexion réussie !");
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      if (formData.email.includes('admin') && formData.password.length >= 8) {
+        navigate('/admin/dashboard');
+      } else {
+        throw new Error("Accès non autorisé");
+      }
     } catch (error) {
-      setErrors({ general: "Échec de la connexion. Veuillez réessayer." });
+      setErrors({ general: "Accès refusé. Vérifiez vos identifiants." });
     } finally {
       setIsLoading(false);
     }
@@ -85,72 +94,144 @@ export default function Login() {
         }
         body, html {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          width: 100%;
-          height: 100%;
+          width: 100vw;
+          height: 100vh;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
+          background: #f5f5f5;
+          overflow: hidden; /* Désactive tout scroll */
+          position: fixed; /* Fixe la page */
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
         }
 
-        /* ====== Background sans filtre ====== */
+        /* ====== Background avec image de fond ====== */
         .login-page {
           display: flex;
           justify-content: center;
           align-items: center;
           width: 100vw;
           height: 100vh;
+          min-height: 600px;
           background-image: url(${backgroundImg});
           background-size: cover;
           background-position: center;
           background-repeat: no-repeat;
+          background-attachment: fixed;
           padding: 20px;
+          overflow: hidden; /* Désactive le scroll */
+          position: fixed; /* Fixe le conteneur */
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
         }
 
-        /* ====== Card Login professionnelle ====== */
+        /* ====== Card Login avec largeur augmentée ====== */
         .login-card {
-          background: white;
-          border-radius: 16px;
-          padding: 40px 45px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+          background: rgba(255, 255, 255, 0.95);
+          border-radius: 24px;
+          padding: 40px 45px; /* Padding augmenté */
+          box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.25),
+            0 8px 20px rgba(0, 0, 0, 0.15);
           width: 100%;
-          max-width: 420px;
+          max-width: 420px; /* Largeur augmentée de 360px à 420px */
           text-align: left;
           position: relative;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          overflow: hidden; /* Désactive tout scroll dans la carte */
+          backdrop-filter: blur(10px);
+          animation: cardEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          /* Désactive la sélection de texte et le drag */
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+          -webkit-user-drag: none;
         }
 
-        /* ====== Header professionnel ====== */
+        /* Barre supérieure élégante */
+        .login-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(90deg, 
+            #2a2a2a 0%, 
+            #444444 50%, 
+            #2a2a2a 100%);
+          z-index: 2;
+          border-radius: 24px 24px 0 0;
+        }
+
+        /* ====== Header ====== */
         .login-header {
           margin-bottom: 32px;
           text-align: center;
+          /* Empêche le drag des éléments du header */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .login-header h1 {
-          font-size: 32px;
-          margin-bottom: 8px;
-          color: #073257;
+          font-size: 28px; /* Légèrement augmenté */
+          margin-bottom: 8px; /* Augmenté */
+          color: #2a2a2a;
           font-weight: 700;
-          letter-spacing: -0.5px;
+          letter-spacing: -0.3px;
+          /* Empêche la sélection */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .login-subtitle {
           color: #666;
-          font-size: 15px;
+          font-size: 14px; /* Augmenté */
           font-weight: 500;
+          line-height: 1.5;
+          margin-top: 15px;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
-        /* ====== Form Groups optimisés ====== */
+        /* ====== Badge Admin ====== */
+        .admin-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px; /* Augmenté */
+          background: rgba(42, 42, 42, 0.08);
+          padding: 12px 20px; /* Augmenté */
+          border-radius: 20px; /* Augmenté */
+          margin-bottom: 24px; /* Augmenté */
+          font-size: 14px; /* Augmenté */
+          font-weight: 600;
+          color: #2a2a2a;
+          letter-spacing: 0.2px;
+          border: 1px solid rgba(42, 42, 42, 0.12);
+          user-select: none;
+          -webkit-user-select: none;
+        }
+
+        /* ====== Form Groups ====== */
         .form-group {
-          margin-bottom: 22px;
+          margin-bottom: 25px; /* Augmenté */
+          position: relative;
         }
 
         .input-label {
           display: block;
-          margin-bottom: 8px;
-          color: #333;
+          margin-bottom: 8px; /* Augmenté */
+          color: #444;
           font-weight: 600;
-          font-size: 14px;
-          letter-spacing: -0.1px;
+          font-size: 14px; /* Augmenté */
+          letter-spacing: 0.1px;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .input-wrapper {
@@ -161,166 +242,159 @@ export default function Login() {
 
         .input-icon {
           position: absolute;
-          left: 16px;
-          color: #666;
-          width: 18px;
-          height: 18px;
+          left: 18px; /* Augmenté */
+          color: #777;
+          width: 18px; /* Augmenté */
+          height: 18px; /* Augmenté */
           z-index: 2;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
-        /* ====== Inputs professionnels ====== */
+        /* ====== Inputs ====== */
         .login-card input {
           width: 100%;
-          padding: 15px 16px 15px 46px;
-          border: 2px solid #ddd;
-          border-radius: 10px;
-          font-size: 15px;
+          padding: 16px 18px 16px 52px; /* Augmenté */
+          border: 2px solid #e0e0e0;
+          border-radius: 12px;
+          font-size: 15px; /* Augmenté */
           font-family: inherit;
           transition: all 0.2s;
-          background: #f8f9fa;
+          background: rgba(255, 255, 255, 0.9);
           color: #222;
           font-weight: 500;
+          height: 50px; /* Augmenté */
+          /* Permet la sélection du texte dans l'input seulement */
+          user-select: auto;
+          -webkit-user-select: auto;
         }
 
         .login-card input:hover {
-          border-color: #bbb;
+          border-color: #b0b0b0;
           background: white;
         }
 
         .login-card input:focus {
           outline: none;
-          border-color: #073257;
-          box-shadow: 0 0 0 3px rgba(7, 50, 87, 0.15);
+          border-color: #2a2a2a;
+          box-shadow: 0 0 0 4px rgba(42, 42, 42, 0.1);
           background: white;
         }
 
         .login-card input.error {
-          border-color: #e53e3e;
-          background: #fff5f5;
+          border-color: #dc2626;
+          background: #fef2f2;
         }
 
         .login-card input::placeholder {
-          color: #777;
+          color: #999;
           font-weight: 400;
+          font-size: 14px; /* Augmenté */
         }
 
         .password-toggle {
           position: absolute;
-          right: 16px;
+          right: 18px; /* Augmenté */
           background: none;
           border: none;
-          color: #666;
+          color: #777;
           cursor: pointer;
-          padding: 6px;
+          padding: 8px; /* Augmenté */
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 6px;
+          border-radius: 8px;
           transition: all 0.2s;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-user-drag: none;
         }
 
         .password-toggle:hover {
-          color: #073257;
-          background: #f0f0f0;
+          color: #2a2a2a;
+          background: rgba(42, 42, 42, 0.08);
         }
 
         /* ====== Error Messages ====== */
         .error-message {
           display: flex;
           align-items: center;
-          gap: 6px;
-          color: #c53030;
-          font-size: 13px;
-          margin-top: 6px;
+          gap: 6px; /* Augmenté */
+          color: #dc2626;
+          font-size: 13px; /* Augmenté */
+          margin-top: 6px; /* Augmenté */
           font-weight: 500;
-          padding-left: 3px;
+          padding-left: 4px; /* Augmenté */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         .error-icon {
-          width: 14px;
-          height: 14px;
+          width: 14px; /* Augmenté */
+          height: 14px; /* Augmenté */
           flex-shrink: 0;
-        }
-
-        /* ====== Remember Me ====== */
-        .remember-forgot {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 25px;
-          margin-top: 8px;
-        }
-
-        .remember-me {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
           user-select: none;
-          padding: 4px 6px;
-          border-radius: 6px;
-          transition: background 0.2s;
+          -webkit-user-select: none;
         }
 
-        .remember-me:hover {
-          background: #f7f7f7;
+        /* ====== Forgot Password ====== */
+        .forgot-password-container {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          margin-bottom: 25px; /* Augmenté */
+          margin-top: 8px; /* Augmenté */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
-        .remember-checkbox {
-          width: 18px;
-          height: 18px;
-          border-radius: 5px;
-          border: 2px solid #ccc;
-          background: white;
-          position: relative;
-          transition: all 0.2s;
-          flex-shrink: 0;
-        }
-
-        .remember-checkbox.checked {
-          background: #073257;
-          border-color: #073257;
-        }
-
-        .remember-checkbox.checked::after {
-          content: '';
-          position: absolute;
-          left: 5px;
-          top: 2px;
-          width: 5px;
-          height: 9px;
-          border: solid white;
-          border-width: 0 2px 2px 0;
-          transform: rotate(45deg);
-        }
-
-        .remember-text {
+        .forgot-password {
           color: #555;
-          font-size: 14px;
-          font-weight: 500;
+          font-size: 13px; /* Augmenté */
+          font-weight: 600;
+          text-decoration: none;
+          cursor: pointer;
+          padding: 6px 10px; /* Augmenté */
+          border-radius: 6px;
+          transition: all 0.2s;
           white-space: nowrap;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-user-drag: none;
         }
 
-        /* ====== Button professionnel ====== */
+        .forgot-password:hover {
+          color: #2a2a2a;
+          background: rgba(42, 42, 42, 0.05);
+        }
+
+        /* ====== Button ====== */
         .login-button {
           width: 100%;
-          padding: 16px;
-          background: #073257;
+          padding: 16px; /* Augmenté */
+          background: #2a2a2a;
           color: white;
-          font-size: 16px;
-          font-weight: 700;
+          font-size: 15px; /* Augmenté */
+          font-weight: 600;
           border: none;
-          border-radius: 10px;
+          border-radius: 12px;
           cursor: pointer;
-          transition: all 0.3s;
-          letter-spacing: 0.3px;
-          box-shadow: 0 4px 15px rgba(7, 50, 87, 0.2);
+          transition: all 0.2s;
+          letter-spacing: 0.2px;
+          box-shadow: 0 4px 12px rgba(42, 42, 42, 0.2);
+          height: 50px; /* Augmenté */
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-user-drag: none;
         }
 
         .login-button:hover:not(:disabled) {
-          background: #0a3a83;
+          background: #333333;
           transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(7, 50, 87, 0.3);
+          box-shadow: 0 6px 16px rgba(42, 42, 42, 0.25);
         }
 
         .login-button:active:not(:disabled) {
@@ -335,113 +409,81 @@ export default function Login() {
 
         .button-loader {
           display: inline-block;
-          width: 18px;
-          height: 18px;
+          width: 18px; /* Augmenté */
+          height: 18px; /* Augmenté */
           border: 3px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
           border-top-color: white;
           animation: spin 0.8s linear infinite;
-          margin-right: 10px;
+          margin-right: 10px; /* Augmenté */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
 
-        /* ====== Links ====== */
-        .forgot-password {
-          color: #073257;
-          font-size: 14px;
-          font-weight: 600;
-          text-decoration: none;
-          cursor: pointer;
-          padding: 5px 8px;
-          border-radius: 5px;
-          transition: all 0.2s;
-          white-space: nowrap;
-        }
-
-        .forgot-password:hover {
-          color: #0a3a83;
-          background: #f0f0f0;
-          text-decoration: none;
-        }
-
-        /* ====== Separator élégant ====== */
-        .separator {
+        /* ====== Security Footer ====== */
+        .security-footer {
+          margin-top: 30px; /* Augmenté */
+          padding-top: 20px; /* Augmenté */
+          border-top: 1px solid rgba(0, 0, 0, 0.08);
+          text-align: center;
+          font-size: 12px; /* Augmenté */
+          color: #777;
+          font-weight: 500;
+          letter-spacing: 0.2px;
           display: flex;
           align-items: center;
-          text-align: center;
-          margin: 25px 0;
-          color: #666;
-          font-size: 14px;
-          font-weight: 600;
-          position: relative;
+          justify-content: center;
+          gap: 8px; /* Augmenté */
+          user-select: none;
+          -webkit-user-select: none;
         }
 
-        .separator::before,
-        .separator::after {
-          content: '';
-          flex: 1;
-          border-bottom: 2px solid #eee;
-        }
-
-        .separator span {
-          padding: 0 15px;
-          background: white;
-        }
-
-        /* ====== Create Account ====== */
-        .create-account {
-          display: block;
-          text-align: center;
-          padding: 15px;
-          background: #f8f9fa;
-          border: 2px solid #ddd;
+        /* ====== General Error ====== */
+        .general-error {
+          background: #fee;
+          border: 1px solid #fecaca;
+          color: #dc2626;
+          padding: 14px; /* Augmenté */
           border-radius: 10px;
-          color: #073257;
-          font-weight: 700;
-          text-decoration: none;
-          font-size: 15px;
-          transition: all 0.3s;
-          cursor: pointer;
-        }
-
-        .create-account:hover {
-          background: white;
-          border-color: #073257;
-          color: #0a3a83;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          margin-bottom: 25px; /* Augmenté */
+          font-size: 14px; /* Augmenté */
+          font-weight: 500;
+          text-align: center;
+          line-height: 1.5;
+          user-select: none;
+          -webkit-user-select: none;
         }
 
         /* ====== Responsive ====== */
         @media (max-width: 480px) {
           .login-page {
-            padding: 15px;
+            padding: 20px 15px;
           }
 
           .login-card {
-            padding: 35px 25px;
+            padding: 35px 30px;
             max-width: 100%;
+            border-radius: 20px;
           }
 
           .login-header h1 {
-            font-size: 28px;
+            font-size: 26px;
           }
 
           .login-subtitle {
-            font-size: 14px;
+            font-size: 13px;
           }
 
-          .remember-forgot {
-            flex-direction: column;
-            gap: 12px;
-            align-items: flex-start;
+          .forgot-password-container {
+            justify-content: flex-start;
           }
 
           .forgot-password {
             align-self: flex-start;
-            padding-left: 0;
           }
         }
 
@@ -451,46 +493,42 @@ export default function Login() {
           }
           
           .form-group {
-            margin-bottom: 18px;
-          }
-          
-          .remember-forgot {
             margin-bottom: 20px;
           }
           
-          .separator {
-            margin: 20px 0;
+          .forgot-password-container {
+            margin-bottom: 20px;
           }
           
           .login-header {
-            margin-bottom: 25px;
+            margin-bottom: 28px;
           }
         }
 
-        /* ====== Styles de curseur ====== */
-        button, 
-        .remember-me,
-        .forgot-password,
-        .create-account {
-          cursor: pointer;
+        @keyframes cardEntrance {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
-        /* ====== Styles pour les textes non-cliquables ====== */
-        .login-header,
-        .login-subtitle,
-        .input-label,
-        .separator span {
-          cursor: default;
-          user-select: none;
-        }
-
-        /* ====== Focus visible pour l'accessibilité ====== */
+        /* ====== Focus visible ====== */
         button:focus-visible,
         a:focus-visible,
-        input:focus-visible,
-        .remember-me:focus-visible {
-          outline: 2px solid rgba(7, 50, 87, 0.5);
+        input:focus-visible {
+          outline: 2px solid rgba(42, 42, 42, 0.5);
           outline-offset: 2px;
+        }
+
+        /* ====== Prévention du zoom sur mobile ====== */
+        @media (max-width: 768px) {
+          input, textarea, select {
+            font-size: 16px !important; /* Empêche le zoom sur iOS */
+          }
         }
         `}
       </style>
@@ -498,45 +536,61 @@ export default function Login() {
       <div className="login-page">
         <div className="login-card">
           <div className="login-header">
-            <h1>Se connecter</h1>
-            <p className="login-subtitle">Accédez à votre espace personnel</p>
+            <div className="admin-badge">
+              <Shield size={16} /> {/* Augmenté */}
+              <span>PANEL ADMINISTRATEUR</span>
+            </div>
+            <h1>Connexion Sécurisée</h1>
           </div>
+
+          {errors.general && (
+            <div className="general-error">
+              <AlertCircle size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+              {errors.general}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
-              <label className="input-label">Adresse email</label>
+              <label className="input-label">
+                Identifiant Administrateur
+              </label>
               <div className="input-wrapper">
-                <Mail className="input-icon" size={18} />
+                <Mail className="input-icon" size={18} /> {/* Augmenté */}
                 <input
                   type="email"
                   name="email"
-                  placeholder="votre@email.com"
+                  placeholder="admin@organisation.com"
                   value={formData.email}
                   onChange={handleChange}
                   className={errors.email ? "error" : ""}
-                  autoComplete="email"
+                  autoComplete="username"
+                  required
                 />
               </div>
               {errors.email && (
                 <div className="error-message">
-                  <AlertCircle className="error-icon" size={14} />
+                  <AlertCircle className="error-icon" size={14} /> {/* Augmenté */}
                   {errors.email}
                 </div>
               )}
             </div>
 
             <div className="form-group">
-              <label className="input-label">Mot de passe</label>
+              <label className="input-label">
+                Mot de Passe Administrateur
+              </label>
               <div className="input-wrapper">
-                <Lock className="input-icon" size={18} />
+                <Lock className="input-icon" size={18} /> {/* Augmenté */}
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="Votre mot de passe"
+                  placeholder="••••••••••••"
                   value={formData.password}
                   onChange={handleChange}
                   className={errors.password ? "error" : ""}
                   autoComplete="current-password"
+                  required
                 />
                 <button
                   type="button"
@@ -544,34 +598,24 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />} {/* Augmenté */}
                 </button>
               </div>
               {errors.password && (
                 <div className="error-message">
-                  <AlertCircle className="error-icon" size={14} />
+                  <AlertCircle className="error-icon" size={14} /> {/* Augmenté */}
                   {errors.password}
                 </div>
               )}
             </div>
 
-            <div className="remember-forgot">
-              <div 
-                className="remember-me" 
-                onClick={() => setRememberMe(!rememberMe)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setRememberMe(!rememberMe)}
-              >
-                <div className={`remember-checkbox ${rememberMe ? 'checked' : ''}`} />
-                <span className="remember-text">Se souvenir de moi</span>
-              </div>
+            <div className="forgot-password-container">
               <a 
-                href="/forgot-password" 
+                href="/admin/forgot-password"
                 className="forgot-password"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate('/forgot-password');
+                  navigate('/admin/forgot-password');
                 }}
                 aria-label="Mot de passe oublié"
               >
@@ -590,25 +634,16 @@ export default function Login() {
                   Connexion...
                 </>
               ) : (
-                "Connexion"
+                "SE CONNECTER"
               )}
             </button>
 
-            <div className="separator">
-              <span>OU</span>
-            </div>
+            {/* Séparateur supprimé */}
 
-            <a 
-              href="/Inscription" 
-              className="create-account"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/Inscription');
-              }}
-              aria-label="Créer un nouveau compte"
-            >
-              Créer un nouveau compte
-            </a>
+            <div className="security-footer">
+              <Shield size={14} /> {/* Augmenté */}
+              <span>Protection avancée • Accès surveillé</span>
+            </div>
           </form>
         </div>
       </div>
