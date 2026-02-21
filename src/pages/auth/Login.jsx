@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
- import { Eye, EyeOff, Mail, Lock, Shield, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Shield, AlertCircle } from "lucide-react";
 
 // Importer les images
 import backgroundImg from "../../assets/images/image_de_fond.png";
+import { showLoginSuccess } from "../../utils/alerts";
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -70,8 +72,10 @@ export default function Login() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1200));
       
-      if (formData.email.includes('admin') && formData.password.length >= 8) {
-        navigate('/admin/dashboard');
+      const matchedUser = TEST_USERS.find(u => u.email === formData.email && u.password === formData.password);
+      if (matchedUser && (matchedUser.role === 'admin' || matchedUser.role === 'super_admin')) {
+        await showLoginSuccess();
+        navigate('/Dashboard_Admin');
       } else {
         throw new Error("Accès non autorisé");
       }
