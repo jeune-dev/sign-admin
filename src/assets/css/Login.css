@@ -1,0 +1,84 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(42, 42, 42, 0.08);
+  padding: 12px 20px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 18px;
+  color: #777;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 16px 18px 16px 52px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+}
+
+.error-message {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-button {
+  width: 100%;
+  padding: 16px;
+  background: #2a2a2a;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
