@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [currentUser] = useState(() => {
     const user = getUser();
     if (!user) {
-      window.location.href = '/login';
+      window.location.href = '/sign/login';
       return null;
     }
     return user;
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     }).then((result) => {
       if (result.isConfirmed) {
         authLogout();
-        window.location.href = '/login';
+        window.location.href = '/sign/login';
       }
     });
   };
