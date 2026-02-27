@@ -21,7 +21,8 @@ export const nombreProfessionnelle = async () => {
 /* Nombre de particuliers */
 export const nombreParticulier = async () => {
   try {
-
+    const response = await api.get('/admin/nombre-particuliers');
+    return response.data;
 } catch (error) {
     throw error;
   }
