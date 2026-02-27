@@ -61,9 +61,10 @@ export const nombreFacture = async () => {
 };
 
 /* Liste des utilisateurs */
-export const listeUtilisateur = async () => {
+export const utilisateurs = async () => {
   try {
-    
+  const response = await api.get('/admin/liste-utilisateur');
+  return response.data; 
   } catch (error) {
     throw error;
   }
