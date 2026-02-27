@@ -3,7 +3,8 @@ import api, { setToken, setUser, clearAuth } from '../api';
 /* Nombre d'indépendants */
 export const nombreIndependant = async () => {
   try {
-
+ const response = await api.get('/admin/nombre-independants');
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -70,7 +71,8 @@ export const listeUtilisateur = async () => {
 /* Activer utilisateur */
 export const activerUtilisateur = async (id) => {
   try {
-
+const response = await api.get('/admin/activer-utilisateur');
+    return response.data;
   } catch (error) {
     throw error;
   }
