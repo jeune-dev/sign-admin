@@ -39,7 +39,8 @@ export const nombreContrat = async () => {
 /* Nombre total d'utilisateurs */
 export const nombreUtilisateur = async () => {
   try {
-
+    const response = await api.get('/admin/nombre-utilisateur');
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -48,7 +49,8 @@ export const nombreUtilisateur = async () => {
 /* Nombre de factures */
 export const nombreFacture = async () => {
   try {
-
+    const response = await api.get('/admin/nombre-facture');
+    return response.data;
   } catch (error) {
     throw error;
   }
@@ -57,7 +59,7 @@ export const nombreFacture = async () => {
 /* Liste des utilisateurs */
 export const listeUtilisateur = async () => {
   try {
-
+    
   } catch (error) {
     throw error;
   }
