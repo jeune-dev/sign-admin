@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { nombreFacture, nombreUtilisateur } from "../../../service/admin/adminService";
+import { nombreFacture, nombreUtilisateur, nombreProfessionnelle } from "../../../service/admin/adminService";
 import {
   Users, FileText, DollarSign, Briefcase,
   UserCheck, User, FileSignature, RefreshCw, Banknote
@@ -8,6 +8,8 @@ import {
 export default function Dashboard({ dashboardData }) {
   const [nbFactures, setNbFactures] = useState(0);
   const [nbUtilisateurs, setNbUtilisateurs] = useState(0);
+  const [nbProfessionnelle, setNbProfessionnelle] = useState(0);
+
 
   const fetchNombreFacture = async () => {
     try {
@@ -27,16 +29,27 @@ export default function Dashboard({ dashboardData }) {
     }
   };
 
+  const fetchNombreProfessionnelle = async () => {
+    try {
+      const data = await nombreProfessionnelle();
+      setNbProfessionnelle(data.totalProfessionnels); // ← pas totalFactures !
+    } catch (error) {
+      console.error("Erreur lors de la récupération des utilisateurs :", error);
+    }
+  };
+
   useEffect(() => {
     fetchNombreFacture();
     fetchNombreUtilisateur();
+    fetchNombreProfessionnelle();
+
   }, []);
 
   const kpiConfigs = [
     { key: "totalUsers", label: "Utilisateurs Totaux", icon: Users, value: nbUtilisateurs },
     { key: "totalFactures", label: "Factures Générées", icon: FileText, value: nbFactures }, // ← valeur injectée directement
     { key: "totalInvoices", label: "Montant Total (FCFA)", icon: Banknote },
-    { key: "totalProfessionnels", label: "Professionnels", icon: Briefcase },
+    { key: "totalProfessionnels", label: "Professionnels", icon: Briefcase, value: nbProfessionnelle },
     { key: "totalClients", label: "Clients", icon: UserCheck },
     { key: "totalParticuliers", label: "Particuliers", icon: User },
     { key: "totalContrats", label: "Contrats", icon: FileSignature },
@@ -66,7 +79,7 @@ export default function Dashboard({ dashboardData }) {
           <p className="header-subtitle">Vue d'ensemble des utilisateurs et factures</p>
         </div>
         <div className="filters-container">
-          <button className="refresh-btn" onClick={() => { fetchNombreFacture(); fetchNombreUtilisateur(); }}>
+          <button className="refresh-btn" onClick={() => { fetchNombreFacture(); fetchNombreUtilisateur(); fetchNombreProfessionnelle }}>
             <RefreshCw size={16} />
             Actualiser
           </button>
