@@ -52,7 +52,6 @@ export default function Dashboard({ dashboardData }) {
   const kpiConfigs = [
     { key: "totalUsers", label: "Utilisateurs Totaux", icon: Users, value: nbUtilisateurs },
     { key: "totalFactures", label: "Factures Générées", icon: FileText, value: nbFactures },
-    { key: "totalInvoices", label: "Montant Total (FCFA)", icon: Banknote },
     { key: "totalParticuliers", label: "Particuliers", icon: User, value: nbParticuliers},
     { key: "totalProfessionnels", label: "Professionnels", icon: Briefcase, value: nbProfessionnelle },
     { key: "totalIndependants", label: "Independants", icon: UserCheck, value: nbIndependants },

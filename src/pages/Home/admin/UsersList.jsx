@@ -122,21 +122,11 @@ export default function UsersList() {
 
   return (
     <>
-      <style>
-        {`
-          /* Style pour la barre de recherche uniquement */
-          
-        `}
-      </style>
 
       <h2 className="title">Gestion des utilisateurs</h2>
 
       <div className="table-container">
         <div className="table-header">
-          <h3 className="table-title">
-            
-          </h3>
-          
           {/* 🔍 Barre de recherche */}
           <div className="search-wrapper">
             <Search size={18} className="search-icon" />

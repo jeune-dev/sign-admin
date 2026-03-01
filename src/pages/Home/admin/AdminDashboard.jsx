@@ -29,8 +29,6 @@ import '../../../assets/css/AdminDashboard.css';
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeMenu, setActiveMenu] = useState('dashboard');
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [notifications] = useState(3);
 
   // 🔹 Utilisateur connecté
   const [currentUser] = useState(() => {
@@ -175,47 +173,6 @@ export default function AdminDashboard() {
             {activeMenu === 'admins' && 'Liste administrateurs'}
             {activeMenu === 'profile' && 'Mon profil'}
           </h1>
-
-          <div className="topbar-right">
-
-            <button className="notification-btn">
-              <Bell size={18} />
-              {notifications > 0 && (
-                <span className="notification-badge" />
-              )}
-            </button>
-
-            {/* Dropdown utilisateur */}
-            <div className="user-dropdown-container">
-              <button
-                className={`user-dropdown-trigger ${
-                  userDropdownOpen ? 'active' : ''
-                }`}
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-              >
-                <div className="user-avatar">
-                  {currentUser.prenom?.[0]}
-                  {currentUser.nom?.[0] || 'A'}
-                </div>
-                <ChevronDown size={16} />
-              </button>
-
-              {userDropdownOpen && (
-                <div className="user-dropdown-menu">
-                  <div className="dropdown-item" onClick={() => setActiveMenu('profile')}>
-                    <User size={16} />
-                    Mon profil
-                  </div>
-
-                  <div className="dropdown-item" onClick={handleLogout}>
-                    <LogOut size={16} />
-                    Déconnexion
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </div>
         </div>
 
         {/* Zone dynamique */}
