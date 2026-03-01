@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { nombreFacture, nombreUtilisateur, nombreProfessionnelle, nombreIndependant,nombreParticulier } from "../../../service/admin/adminService";
+import { nombreFacture, nombreUtilisateur, nombreProfessionnelle, nombreIndependant,nombreParticulier, nombreAdmin } from "../../../service/admin/adminService";
 import {
   Users, FileText, DollarSign, Briefcase,
   UserCheck, User, FileSignature, RefreshCw, Banknote
@@ -11,68 +11,53 @@ export default function Dashboard({ dashboardData }) {
   const [nbParticuliers, setNbParticuliers] = useState(0);
   const [nbProfessionnelle, setNbProfessionnelle] = useState(0);
   const [nbIndependants, setNbIndependants] = useState(0);
+  const [nbAdmins, setNbAdmins] = useState(0);
 
-  const fetchNombreFacture = async () => {
+  // === Fonction pour tout récupérer en même temps ===
+  const fetchAllData = async () => {
     try {
-      const data = await nombreFacture();
-      setNbFactures(data.totalFactures);
+      const [
+        facturesData,
+        utilisateursData,
+        particuliersData,
+        professionnelsData,
+        independantsData,
+        adminsData
+      ] = await Promise.all([
+        nombreFacture(),
+        nombreUtilisateur(),
+        nombreParticulier(),
+        nombreProfessionnelle(),
+        nombreIndependant(),
+        nombreAdmin()
+      ]);
+
+      setNbFactures(facturesData.totalFactures || 0);
+      setNbUtilisateurs(utilisateursData.totalUtilisateurs || 0);
+      setNbParticuliers(particuliersData.totalParticuliers || 0);
+      setNbProfessionnelle(professionnelsData.totalProfessionnels || 0);
+      setNbIndependants(independantsData.totalIndependants || 0);
+      setNbAdmins(adminsData.totalAdmins || 0);
+
     } catch (error) {
-      console.error("Erreur lors de la récupération des factures :", error);
+      console.error("Erreur lors de la récupération des données du dashboard :", error);
     }
   };
 
-  const fetchNombreUtilisateur = async () => {
-    try {
-      const data = await nombreUtilisateur();
-      setNbUtilisateurs(data.totalUtilisateurs); // ← pas totalFactures !
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs :", error);
-    }
-  };
-
-  const fetchNombreParticulier = async () => {
-    try {
-      const data = await nombreParticulier();
-      setNbParticuliers(data.totalParticuliers); 
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs :", error);
-    }
-  }
-
-  const fetchNombreProfessionnelle = async () => {
-    try {
-      const data = await nombreProfessionnelle();
-      setNbProfessionnelle(data.totalProfessionnels); 
-    } catch (error) {
-      console.error("Erreur lors de la récupération des utilisateurs :", error);
-    }
-  };
-
-  const fetchNombreIndependant = async () => {
-    try {
-      const data = await nombreIndependant();
-      setNbIndependants(data.totalIndependants); // ← pas totalFactures !
-    } catch (error) {
-      console.error("Erreur lors de la récupération des Independants :", error);
-    }
-  };
-
+  // === useEffect pour charger au montage ===
   useEffect(() => {
-    fetchNombreFacture();
-    fetchNombreUtilisateur();
-    fetchNombreParticulier();
-    fetchNombreProfessionnelle();
-    fetchNombreIndependant();
+    fetchAllData();
   }, []);
 
   const kpiConfigs = [
     { key: "totalUsers", label: "Utilisateurs Totaux", icon: Users, value: nbUtilisateurs },
-    { key: "totalFactures", label: "Factures Générées", icon: FileText, value: nbFactures }, // ← valeur injectée directement
+    { key: "totalFactures", label: "Factures Générées", icon: FileText, value: nbFactures },
     { key: "totalInvoices", label: "Montant Total (FCFA)", icon: Banknote },
     { key: "totalParticuliers", label: "Particuliers", icon: User, value: nbParticuliers},
     { key: "totalProfessionnels", label: "Professionnels", icon: Briefcase, value: nbProfessionnelle },
     { key: "totalIndependants", label: "Independants", icon: UserCheck, value: nbIndependants },
-    { key: "totalContrats", label: "Contrats", icon: FileSignature },
+    { key: "totalAdmins", label: "Admins", icon: UserCheck, value: nbAdmins },
+    { key: "totalContrats", label: "Contrats", icon: FileSignature }, 
   ];
 
   const formatNumber = (num) => {
@@ -83,7 +68,7 @@ export default function Dashboard({ dashboardData }) {
   };
 
   const getKPIValue = (kpi) => {
-    if (kpi.value !== undefined) return formatNumber(kpi.value); // ← priorité à la valeur locale
+    if (kpi.value !== undefined) return formatNumber(kpi.value);
     if (kpi.key === "totalInvoices") {
       return `${formatNumber(dashboardData[kpi.key] / 1000)}K FCFA`;
     }
@@ -99,7 +84,7 @@ export default function Dashboard({ dashboardData }) {
           <p className="header-subtitle">Vue d'ensemble des utilisateurs et factures</p>
         </div>
         <div className="filters-container">
-          <button className="refresh-btn" onClick={() => { fetchNombreFacture(); fetchNombreUtilisateur(); fetchNombreParticulier() ; fetchNombreProfessionnelle ; fetchNombreIndependant() }}>
+          <button className="refresh-btn" onClick={fetchAllData}>
             <RefreshCw size={16} />
             Actualiser
           </button>

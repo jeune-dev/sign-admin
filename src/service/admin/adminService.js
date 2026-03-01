@@ -50,6 +50,18 @@ export const nombreUtilisateur = async () => {
   }
 };
 
+
+/* Liste des factures */
+export const listeFactures = async () => {
+  try {
+    const response = await api.get('/admin/liste-factures');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
 /* Nombre de factures */
 export const nombreFacture = async () => {
   try {
@@ -64,6 +76,36 @@ export const nombreFacture = async () => {
 export const listeUtilisateurs = async () => {
   try {
     const response = await api.get('/admin/liste-utilisateur');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/* Liste des administrateurs */
+export const listerAdmins = async () => {
+  try {
+    const response = await api.get('/admin/liste-admins');
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/* Ajouter  des administrateurs */
+export const ajoutAdmins = async (adminData) => {
+  try {
+    const response = await api.post('/admin/ajout-admins', adminData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/* Nombre d'adminidtrateurs' */
+export const nombreAdmin = async () => {
+  try {
+    const response = await api.get('/admin/nombre-admins');
     return response.data;
   } catch (error) {
     throw error;
@@ -89,3 +131,4 @@ export const desactiverUtilisateur = async (id) => {
     throw error;
   }
 };
+

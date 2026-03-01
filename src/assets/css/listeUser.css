@@ -162,3 +162,113 @@
   justify-content: center;
   box-shadow: 0 6px 18px rgba(0,0,0,0.2);
 }
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}          
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #999;
+  pointer-events: none;
+}
+
+.search-input {
+  padding: 10px 35px 10px 40px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 300px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  border-color: #000;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1;
+}
+
+.search-clear:hover {
+  color: #000;
+}
+
+          /* Style pour la pagination uniquement */
+.pagination-simple {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 20px;
+}
+
+.pagination-btn {
+display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.pagination-prev {
+  background-color: #000;
+  color: white;
+}
+
+.pagination-prev:hover:not(:disabled) {
+  background-color: #333 ;
+}
+
+.pagination-next {
+  background-color: #000;
+  color: white;
+}
+
+.pagination-next:hover:not(:disabled) {
+  background-color: #333;
+}
+
+.pagination-btn:disabled {
+            
+  background-color: #f0f0f0 !important;
+  color: #999 !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+ 
+/* Style pour le message aucun résultat */
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
