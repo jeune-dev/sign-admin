@@ -7,7 +7,7 @@ import {
   ajoutAdmins
 } from '../../../service/admin/adminService';
 
-import '../../../assets/css/listeAdmin.css';
+import '../../../assets/css/ListeAdmin.css';
 
 export default function AdminList() {
 
