@@ -9,9 +9,9 @@ export const validateIdentifiant = (value) => {
 };
 
 /* Login */
-export const login = async (identifiant, mot_de_passe) => {
+export const login = async (identifiant, password) => {
   try {
-    const response = await api.post('/auth/login', { identifiant, mot_de_passe });
+    const response = await api.post('/auth/login', { identifiant, password });
 
     const { token, utilisateur } = response.data;
     setToken(token);

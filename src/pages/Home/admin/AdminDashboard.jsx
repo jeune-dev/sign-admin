@@ -18,7 +18,7 @@ import { getUser, logout as authLogout } from '../../../service/auth/authService
 // Import des composants
 import Dashboard from './Dashboard';
 import UsersList from './UsersList';
-import FacturesList from './Facturelist';
+import FacturesList from './FactureList';
 import AdminList from './AdminList';
 import Profile from './Profile';
 
