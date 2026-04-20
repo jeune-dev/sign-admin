@@ -5,7 +5,7 @@ import {
   listeUtilisateurs,
   activerUtilisateur,
   desactiverUtilisateur
-} from '../../../service/admin/adminService';
+} from '../../../service/admin/adminService'; 
 import '../../../assets/css/listeUser.css';
 
 export default function UsersList() {
