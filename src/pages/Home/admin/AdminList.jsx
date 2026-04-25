@@ -1,164 +1,138 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X as XIcon, Eye, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import Swal from 'sweetalert2';
-
 import {
-  listerAdmins,
-  ajoutAdmins
+  Check,
+  X as XIcon,
+  Eye,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Mail,
+  Phone,
+  UserCheck,
+  UserX
+} from 'lucide-react';
+import Swal from 'sweetalert2';
+import {
+  listeUtilisateurs,
+  activerUtilisateur,
+  desactiverUtilisateur
 } from '../../../service/admin/adminService';
+import "../../../assets/css/ListeAdmin.css";
 
-import '../../../assets/css/ListeAdmin.css';
-
-export default function AdminList() {
-
+export default function UsersList() {
   const [usersList, setUsersList] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // 10 éléments par page
+  const [usersPerPage] = useState(10);
 
-  const [newAdmin, setNewAdmin] = useState({
-    nom: '',
-    prenom: '',
-    email: '',
-    telephone: '',
-    adresse: '',
-    mot_de_passe: ''
-  });
-
-  /* ===============================
-     Charger liste admins
-  =============================== */
+  // Charger utilisateurs
   useEffect(() => {
-    fetchAdmins();
+    const fetchUsers = async () => {
+      try {
+        const data = await listeUtilisateurs();
+        const formatted = (data.utilisateurs || []).map(user => ({
+          ...user,
+          statut: user.statut?.toLowerCase() || 'inactif'
+        }));
+        setUsersList(formatted);
+        setFilteredUsers(formatted);
+      } catch {
+        Swal.fire('Erreur', 'Impossible de récupérer les utilisateurs', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
   }, []);
 
-  const fetchAdmins = async () => {
-    try {
-      const response = await listerAdmins();
-      const admins = response.admins || response.administrateurs || [];
-      setUsersList(admins);
-    } catch {
-    Swal.fire('Erreur', 'Impossible de récupérer les administrateurs', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ===============================
-     FILTRAGE RECHERCHE
-  =============================== */
-  const filteredUsers = usersList.filter(user => {
-    const search = searchTerm.toLowerCase().trim();
-    if (!search) return true;
-
-    const telephone = user.telephone?.replace(/\s+/g, '') || '';
-
-    return (
-      user.nom?.toLowerCase().includes(search) ||
-      user.prenom?.toLowerCase().includes(search) ||
-      user.email?.toLowerCase().includes(search) ||
-      user.role?.toLowerCase().includes(search) ||
-      telephone.startsWith(search)
-    );
-  });
-
-  // Réinitialiser la page à 1 lorsque la recherche change
+  // Filtrer
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  // Calcul du nombre total de pages
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-
-  // Éléments à afficher sur la page courante
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Fonctions de pagination
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prev => prev + 1);
+    if (usersList.length > 0) {
+      const filtered = usersList.filter(user => {
+        const searchLower = searchTerm.toLowerCase().trim();
+        if (searchLower === '') return true;
+        const nomMatch = (user.nom?.toLowerCase() || '').includes(searchLower);
+        const prenomMatch = (user.prenom?.toLowerCase() || '').includes(searchLower);
+        const emailMatch = (user.email?.toLowerCase() || '').includes(searchLower);
+        const roleMatch = (user.role?.toLowerCase() || '').includes(searchLower);
+        const telephone = user.telephone?.replace(/\s+/g, '') || '';
+        const searchDigits = searchTerm.replace(/\s+/g, '');
+        const telephoneMatch = telephone.startsWith(searchDigits);
+        return nomMatch || prenomMatch || emailMatch || roleMatch || telephoneMatch;
+      });
+      setFilteredUsers(filtered);
+      setCurrentPage(1);
     }
-  };
+  }, [searchTerm, usersList]);
 
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
-    }
-  };
+  // Activer/Désactiver
+  const handleToggleStatus = async (user) => {
+    const isActif = user.statut === 'actif';
+    const action = isActif ? 'désactiver' : 'activer';
 
-  /* ===============================
-     Ajouter administrateur
-  =============================== */
-  const handleAddAdmin = async (e) => {
-    e.preventDefault();
+    const result = await Swal.fire({
+      title: `Voulez-vous ${action} cet utilisateur ?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Oui',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#000'
+    });
 
-    if (Object.values(newAdmin).some(v => !v.trim())) {
-      Swal.fire('Erreur', 'Tous les champs sont obligatoires', 'error');
-      return;
-    }
+    if (!result.isConfirmed) return;
 
     try {
-      Swal.fire({
-        title: 'Enregistrement...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
+      if (isActif) await desactiverUtilisateur(user.id);
+      else await activerUtilisateur(user.id);
 
-      await ajoutAdmins({ ...newAdmin, role: "Admin" });
-
-      Swal.close();
-      setShowAddModal(false);
-
-      setNewAdmin({
-        nom: '',
-        prenom: '',
-        email: '',
-        telephone: '',
-        adresse: '',
-        mot_de_passe: ''
-      });
-
-      await fetchAdmins();
-
-      Swal.fire('Succès', 'Administrateur ajouté avec succès', 'success');
-
-    } catch (error) {
-      Swal.fire(
-        'Erreur',
-        error?.response?.data?.message ||
-        "Impossible d’ajouter l’administrateur",
-        'error'
+      setUsersList(prev =>
+        prev.map(u =>
+          u.id === user.id ? { ...u, statut: isActif ? 'inactif' : 'actif' } : u
+        )
       );
+      Swal.fire('Succès', `Utilisateur ${action}`, 'success');
+    } catch {
+      Swal.fire('Erreur', 'Impossible de modifier le statut', 'error');
     }
   };
 
-  if (loading) return <p>Chargement...</p>;
+  // Récupérer les initiales pour l'avatar
+  const getInitials = (prenom, nom) => {
+    return `${prenom?.charAt(0) || ''}${nom?.charAt(0) || ''}`.toUpperCase();
+  };
+
+  // Pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+  if (loading) return <div className="loading-spinner">Chargement des utilisateurs...</div>;
 
   return (
-    <>
-      <div className="page-header">
-        <h2 className="title">Gestion des administrateurs</h2>
-        <button className="btn-add-admin" onClick={() => setShowAddModal(true)}>
-          <Plus size={16}/> Ajouter admin
-        </button>
+    <div className="userslist-container">
+      {/* En-tête */}
+      <div className="userslist-header">
+        <div className="header-icon">
+          <Users size={28} />
+        </div>
+        <div>
+          <h1 className="userslist-title">Liste des utilisateurs</h1>
+          <p className="userslist-subtitle">Gérez tous les utilisateurs de la plateforme</p>
+        </div>
       </div>
 
-      <div className="table-container">
-
-        {/* 🔍 Recherche */}
+      {/* Barre de recherche */}
+      <div className="search-section">
         <div className="search-wrapper">
-          <Search size={18} className="search-icon"/>
+          <Search size={18} className="search-icon" />
           <input
             type="text"
-            placeholder="Rechercher nom, email, téléphone..."
+            placeholder="Rechercher par nom, prénom, email, téléphone ou rôle..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -169,47 +143,84 @@ export default function AdminList() {
             </button>
           )}
         </div>
+        <div className="search-stats">
+          {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''}
+        </div>
+      </div>
 
-        {/* ✅ SI LISTE VIDE */}
-        {filteredUsers.length === 0 ? (
-          <p className="no-results">Aucun administrateur trouvé.</p>
-        ) : (
-          <>
-            <table className="data-table">
+      {/* Tableau */}
+      {filteredUsers.length === 0 ? (
+        <div className="no-results">
+          <Users size={48} />
+          <p>Aucun utilisateur trouvé</p>
+        </div>
+      ) : (
+        <>
+          <div className="table-wrapper">
+            <table className="users-table">
               <thead>
                 <tr>
-                  <th>Nom</th>
-                  <th>Prénom</th>
+                  <th>Utilisateur</th>
                   <th>Email</th>
-                  <th>Téléphone</th>
                   <th>Rôle</th>
                   <th>Statut</th>
-                  <th>Actions</th>
+                  <th className="actions-header">Actions</th>
                 </tr>
               </thead>
-
               <tbody>
-                {paginatedUsers.map(user => {
+                {currentUsers.map(user => {
                   const isActif = user.statut === 'actif';
-
                   return (
                     <tr key={user.id}>
-                      <td>{user.nom || '-'}</td>
-                      <td>{user.prenom || '-'}</td>
-                      <td>{user.email || '-'}</td>
-                      <td>{user.telephone || '-'}</td>
-                      <td>{user.role || '-'}</td>
-
                       <td>
-                        <span className={isActif ? 'badge actif' : 'badge inactif'}>
-                          {isActif ? <Check size={12}/> : <XIcon size={12}/>}
+                        <div className="user-info-cell">
+                          <div className="user-avatar">
+                            {user.photoProfil ? (
+                              <img src={user.photoProfil} alt="profil" />
+                            ) : (
+                              <span>{getInitials(user.prenom, user.nom)}</span>
+                            )}
+                          </div>
+                          <div className="user-details-cell">
+                            <div className="user-name-cell">
+                              {user.prenom} {user.nom}
+                            </div>
+                            {user.telephone && (
+                              <div className="user-phone-cell">
+                                <Phone size={12} />
+                                {user.telephone}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="user-email-cell">
+                        <Mail size={12} />
+                        {user.email || '-'}
+                      </td>
+                      <td>
+                        <span className={`role-badge role-${(user.role || 'particulier').toLowerCase()}`}>
+                          {user.role || 'Particulier'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${isActif ? 'status-active' : 'status-inactive'}`}>
+                          {isActif ? <Check size={12} /> : <XIcon size={12} />}
                           {isActif ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
-
-                      <td className="actions">
-                        <button className="btn-view" onClick={() => setSelectedUser(user)}>
-                          <Eye size={16}/>
+                      <td className="actions-cell">
+                        <button className="action-btn btn-view" onClick={() => setSelectedUser(user)} title="Voir détails">
+                          <Eye size={16} />
+                          <span>Voir</span>
+                        </button>
+                        <button
+                          className={`action-btn ${isActif ? 'btn-disable' : 'btn-enable'}`}
+                          onClick={() => handleToggleStatus(user)}
+                          title={isActif ? 'Désactiver' : 'Activer'}
+                        >
+                          {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
+                          <span>{isActif ? 'Désactiver' : 'Activer'}</span>
                         </button>
                       </td>
                     </tr>
@@ -217,76 +228,94 @@ export default function AdminList() {
                 })}
               </tbody>
             </table>
+          </div>
 
-            {/* Pagination simple - deux boutons */}
-            {filteredUsers.length > itemsPerPage && (
-              <div className="pagination-simple">
-                <button 
-                  onClick={prevPage} 
-                  disabled={currentPage === 1}
-                  className="pagination-btn pagination-prev"
-                >
-                  <ChevronLeft size={18} /> Précédent
-                </button>
-                
-                <span className="pagination-info">
-                  Page {currentPage} sur {totalPages}
-                </span>
+          {/* Pagination */}
+          {filteredUsers.length > usersPerPage && (
+            <div className="pagination">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="pagination-btn"
+              >
+                <ChevronLeft size={18} /> Précédent
+              </button>
+              <span className="pagination-info">
+                Page {currentPage} sur {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="pagination-btn"
+              >
+                Suivant <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
-                <button 
-                  onClick={nextPage} 
-                  disabled={currentPage === totalPages}
-                  className="pagination-btn pagination-next"
-                >
-                  Suivant <ChevronRight size={18} />
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* MODAL DETAIL */}
+      {/* MODAL DÉTAILS */}
       {selectedUser && (
         <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>{selectedUser.nom} {selectedUser.prenom}</h3>
-            <p><strong>Email :</strong> {selectedUser.email || '-'}</p>
-            <p><strong>Téléphone :</strong> {selectedUser.telephone || '-'}</p>
-            <p><strong>Adresse :</strong> {selectedUser.adresse || '-'}</p>
-            <p><strong>Rôle :</strong> {selectedUser.role || '-'}</p>
-            <p><strong>Statut :</strong> {selectedUser.statut || '-'}</p>
-            <button className="close-btn" onClick={() => setSelectedUser(null)}>Fermer</button>
-          </div>
-        </div>
-      )}
+          <div className="modern-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedUser(null)}>×</button>
 
-      {/* MODAL AJOUT */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h3>Ajouter un administrateur</h3>
+            <div className="modal-cover"></div>
 
-            <form onSubmit={handleAddAdmin} className="form-admin">
-              {Object.keys(newAdmin).map((key) => (
-                <input
-                  key={key}
-                  type={key === 'email' ? 'email' : key === 'mot_de_passe' ? 'password' : 'text'}
-                  placeholder={key.replace('_',' ') + ' *'}
-                  value={newAdmin[key]}
-                  onChange={(e)=> setNewAdmin({...newAdmin, [key]: e.target.value})}
-                />
-              ))}
-
-              <div className="modal-buttons">
-                <button type="submit" className="btn-save">Enregistrer</button>
-                <button type="button" className="btn-cancel" onClick={() => setShowAddModal(false)}>Annuler</button>
+            <div className="modal-avatar-wrapper">
+              <div className="modal-avatar">
+                {selectedUser.photoProfil ? (
+                  <img src={selectedUser.photoProfil} alt="profil" />
+                ) : (
+                  <span>{getInitials(selectedUser.prenom, selectedUser.nom)}</span>
+                )}
               </div>
-            </form>
+              <div className="modal-status">
+                <span className={`status-dot ${selectedUser.statut === 'actif' ? 'active' : 'inactive'}`}></span>
+                {selectedUser.statut === 'actif' ? 'Actif' : 'Inactif'}
+              </div>
+            </div>
 
+            <h2 className="modal-name">{selectedUser.prenom} {selectedUser.nom}</h2>
+            <p className="modal-role">{selectedUser.role || 'Utilisateur'}</p>
+
+            <div className="modal-divider"></div>
+
+            <div className="modal-info-grid">
+              <div className="modal-info-item">
+                <Mail size={18} />
+                <div>
+                  <label>Email</label>
+                  <p>{selectedUser.email || '-'}</p>
+                </div>
+              </div>
+              <div className="modal-info-item">
+                <Phone size={18} />
+                <div>
+                  <label>Téléphone</label>
+                  <p>{selectedUser.telephone || '-'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-secondary" onClick={() => setSelectedUser(null)}>
+                Fermer
+              </button>
+              <button
+                className={`modal-btn ${selectedUser.statut === 'actif' ? 'modal-btn-danger' : 'modal-btn-success'}`}
+                onClick={() => {
+                  setSelectedUser(null);
+                  handleToggleStatus(selectedUser);
+                }}
+              >
+                {selectedUser.statut === 'actif' ? 'Désactiver' : 'Activer'}
+              </button>
+            </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -6,35 +6,96 @@
   height: 100vh;
   background-size: cover;
   background-position: center;
+  position: relative;
+}
+
+/* Overlay transparent pour rendre l'image visible mais lisible */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 24px;
-  padding: 40px;
+  position: relative;
+  z-index: 2;
+  background: white;
+  border-radius: 32px;
+  padding: 48px 40px;
   width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.4s ease;
 }
 
-.login-header {
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo */
+.login-logo {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
-.admin-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(42, 42, 42, 0.08);
-  padding: 12px 20px;
+.logo-wrapper {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 16px;
+  background: #f8f9fa;
   border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.logo-wrapper img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.login-logo h1 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: #111827;
+}
+
+.login-logo h1 span {
+  color: #000000;
+}
+
+.login-logo p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Formulaires */
+.form-group {
   margin-bottom: 24px;
 }
 
-.form-group {
-  margin-bottom: 25px;
-  position: relative;
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
 }
 
 .input-wrapper {
@@ -45,40 +106,134 @@
 
 .input-icon {
   position: absolute;
-  left: 18px;
-  color: #777;
+  left: 16px;
+  color: #9ca3af;
+  pointer-events: none;
 }
 
 .login-card input {
   width: 100%;
-  padding: 16px 18px 16px 52px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
+  padding: 14px 16px 14px 46px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  background: white;
 }
 
-.error-message {
+.login-card input:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.login-card input.error {
+  border-color: #dc2626;
+}
+
+.error-text {
   color: #dc2626;
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.login-button {
-  width: 100%;
-  padding: 16px;
-  background: #2a2a2a;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
+  display: block;
 }
 
 .password-toggle {
   position: absolute;
-  right: 18px;
+  right: 16px;
   background: none;
   border: none;
   cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.password-toggle:hover {
+  color: #374151;
+}
+
+/* Bouton de connexion */
+.login-button {
+  width: 100%;
+  padding: 14px;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.login-button:hover:not(:disabled) {
+  background: #1a1a1a;
+  transform: translateY(-2px);
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Footer */
+.login-footer {
+  text-align: center;
+  margin-top: 28px;
+}
+
+.forgot-link {
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: #000000;
+  text-decoration: underline;
+}
+
+/* Toast personnalisation */
+.Toastify__toast {
+  border-radius: 12px !important;
+  font-family: inherit !important;
+}
+
+.Toastify__toast--success {
+  background: #10b981 !important;
+}
+
+.Toastify__toast--error {
+  background: #ef4444 !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-card {
+    margin: 16px;
+    padding: 32px 24px;
+  }
+
+  .login-logo h1 {
+    font-size: 24px;
+  }
+
+  .logo-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+
+  .logo-wrapper img {
+    width: 40px;
+    height: 40px;
+  }
 }
