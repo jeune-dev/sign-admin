@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, LogIn } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 
 import "../../assets/css/Login.css";
 import backgroundImg from "../../assets/images/image_de_fond.png";
-import logoImage from "../../assets/images/logo.jpeg";
 import { login, validateLoginForm, handleApiError } from "../../service/auth/authService";
 import { ToastContainer, toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css'; 
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,7 +17,6 @@ export default function Login() {
 
   useEffect(() => {
     document.title = "SIGN APP | Connexion";
-    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
     };
@@ -65,26 +63,24 @@ export default function Login() {
   return (
     <div className="login-page" style={{ backgroundImage: `url(${backgroundImg})` }}>
       <ToastContainer position="top-right" newestOnTop pauseOnHover closeOnClick draggable />
-      
+
       <div className="login-card">
-        {/* Logo et titre */}
-        <div className="login-logo">
-          <div className="logo-wrapper">
-            <img src={logoImage} alt="SIGN APP" />
-          </div>
-          <h1>SIGN <span>APP</span></h1>
-          <p>Espace Administrateur</p>
+
+        {/* Badge Panel Administrateur */}
+        <div className="admin-badge">
+          <Shield size={13} className="badge-icon" />
+          <span>PANEL ADMINISTRATEUR</span>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label>Identifiant</label>
             <div className="input-wrapper">
-              <Mail className="input-icon" size={18} />
+              <Mail className="input-icon" size={16} />
               <input
                 type="text"
                 name="identifiant"
-                placeholder="admin@signapp.com"
+                placeholder="admin@organisation.com"
                 value={formData.identifiant}
                 onChange={handleChange}
                 className={errors.identifiant ? "error" : ""}
@@ -97,7 +93,7 @@ export default function Login() {
           <div className="form-group">
             <label>Mot de passe</label>
             <div className="input-wrapper">
-              <Lock className="input-icon" size={18} />
+              <Lock className="input-icon" size={16} />
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -112,21 +108,14 @@ export default function Login() {
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
             {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
           <button type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? (
-              "Connexion..."
-            ) : (
-              <>
-                <LogIn size={18} />
-                SE CONNECTER
-              </>
-            )}
+            {isLoading ? "Connexion..." : "SE CONNECTER"}
           </button>
 
           <div className="login-footer">

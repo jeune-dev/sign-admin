@@ -1,42 +1,48 @@
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
 .login-page {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100vw;
-  height: 100vh;
+  min-height: 100vh;
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   position: relative;
+  overflow-y: auto;
 }
 
-/* Overlay transparent pour rendre l'image visible mais lisible */
+/* Overlay léger */
 .login-page::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
   z-index: 1;
 }
 
+/* ============================================================
+   CARD
+   ============================================================ */
 .login-card {
   position: relative;
   z-index: 2;
-  background: white;
-  border-radius: 32px;
-  padding: 48px 40px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px 40px 40px;
   width: 100%;
-  max-width: 440px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.4s ease;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  animation: slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  margin: 40px auto;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -44,58 +50,49 @@
   }
 }
 
-/* Logo */
-.login-logo {
-  text-align: center;
+/* ============================================================
+   BADGE — PANEL ADMINISTRATEUR
+   ============================================================ */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #3f3f46;
+  margin: 0 auto 40px;
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 40px;
 }
 
-.logo-wrapper {
-  width: 70px;
-  height: 70px;
-  margin: 0 auto 16px;
-  background: #f8f9fa;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+.badge-icon {
+  color: #71717a;
+  flex-shrink: 0;
 }
 
-.logo-wrapper img {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-}
-
-.login-logo h1 {
-  font-size: 28px;
-  font-weight: 800;
-  margin: 0 0 6px 0;
-  color: #111827;
-}
-
-.login-logo h1 span {
-  color: #000000;
-}
-
-.login-logo p {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* Formulaires */
+/* ============================================================
+   FORM GROUPS
+   ============================================================ */
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: #27272a;
+  letter-spacing: 0.01em;
 }
 
 .input-wrapper {
@@ -106,106 +103,123 @@
 
 .input-icon {
   position: absolute;
-  left: 16px;
-  color: #9ca3af;
+  left: 14px;
+  color: #a1a1aa;
   pointer-events: none;
 }
 
 .login-card input {
   width: 100%;
-  padding: 14px 16px 14px 46px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 14px;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  background: white;
+  padding: 12px 14px 12px 42px;
+  border: 1.5px solid #e4e4e7;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #18181b;
+  background: #fafafa;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.login-card input::placeholder {
+  color: #a1a1aa;
 }
 
 .login-card input:focus {
   outline: none;
-  border-color: #000000;
+  background: #fff;
+  border-color: #a1a1aa;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
 }
 
 .login-card input.error {
-  border-color: #dc2626;
+  border-color: #ef4444;
+  background: #fff7f7;
 }
 
 .error-text {
-  color: #dc2626;
-  font-size: 12px;
-  margin-top: 6px;
+  color: #ef4444;
+  font-size: 11.5px;
+  margin-top: 5px;
   display: block;
 }
 
+/* Toggle mot de passe */
 .password-toggle {
   position: absolute;
-  right: 16px;
+  right: 14px;
   background: none;
   border: none;
   cursor: pointer;
-  color: #9ca3af;
+  color: #a1a1aa;
   display: flex;
   align-items: center;
-  justify-content: center;
   padding: 0;
+  transition: color 0.15s;
 }
 
 .password-toggle:hover {
-  color: #374151;
+  color: #52525b;
 }
 
-/* Bouton de connexion */
+/* ============================================================
+   BOUTON SE CONNECTER
+   ============================================================ */
 .login-button {
   width: 100%;
-  padding: 14px;
-  background: #000000;
-  color: white;
+  padding: 13px;
+  background: #18181b;
+  color: #ffffff;
   border: none;
-  border-radius: 14px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 8px;
+  transition: background 0.2s ease, transform 0.15s ease;
+  margin-top: 10px;
 }
 
 .login-button:hover:not(:disabled) {
-  background: #1a1a1a;
-  transform: translateY(-2px);
+  background: #27272a;
+  transform: translateY(-1px);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .login-button:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Footer */
+/* ============================================================
+   FOOTER — MOT DE PASSE OUBLIÉ
+   ============================================================ */
 .login-footer {
   text-align: center;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .forgot-link {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 12.5px;
+  color: #71717a;
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .forgot-link:hover {
-  color: #000000;
+  color: #18181b;
   text-decoration: underline;
 }
 
-/* Toast personnalisation */
+/* ============================================================
+   TOAST
+   ============================================================ */
 .Toastify__toast {
   border-radius: 12px !important;
   font-family: inherit !important;
+  font-size: 14px !important;
 }
 
 .Toastify__toast--success {
@@ -216,24 +230,13 @@
   background: #ef4444 !important;
 }
 
-/* Responsive */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 480px) {
   .login-card {
-    margin: 16px;
-    padding: 32px 24px;
-  }
-
-  .login-logo h1 {
-    font-size: 24px;
-  }
-
-  .logo-wrapper {
-    width: 60px;
-    height: 60px;
-  }
-
-  .logo-wrapper img {
-    width: 40px;
-    height: 40px;
+    margin: 24px 16px;
+    padding: 36px 24px 32px;
+    border-radius: 20px;
   }
 }
