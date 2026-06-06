@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
-import Swal from 'sweetalert2';
+import SwalCustom from '../../../utils/swal.config';
 
 import { listeFactures } from '../../../service/admin/adminService';
 
@@ -24,7 +24,7 @@ export default function FactureList() {
       const facturesData = response.factures || [];
       setFactures(facturesData);
     } catch {
-      Swal.fire('Erreur', 'Impossible de récupérer les factures', 'error');
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les factures' });
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ export default function FactureList() {
 
   const openPdf = (base64String) => {
     if (!base64String) {
-      Swal.fire('Info', 'Aucun PDF disponible pour cette facture', 'info');
+      SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour cette facture' });
       return;
     }
 
@@ -81,7 +81,7 @@ export default function FactureList() {
 
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch {
-      Swal.fire('Erreur', 'Impossible d\'ouvrir le PDF', 'error');
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: "Impossible d'ouvrir le PDF" });
     }
   };
 
@@ -89,28 +89,24 @@ export default function FactureList() {
 
   return (
     <>
-      <div className="page-header">
-        <h2 className="title">Gestion des factures</h2>
+      {/* Search bar */}
+      <div className="search-wrapper">
+        <Search size={18} className="search-icon" />
+        <input
+          type="text"
+          placeholder="Rechercher par numéro, client ou professionnel..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        {searchTerm && (
+          <button className="search-clear" onClick={() => setSearchTerm('')}>
+            ×
+          </button>
+        )}
       </div>
 
       <div className="table-container">
-        {/* Search bar */}
-        <div className="search-wrapper">
-          <Search size={18} className="search-icon" />
-          <input
-            type="text"
-            placeholder="Rechercher par numéro, client ou professionnel..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-          {searchTerm && (
-            <button className="search-clear" onClick={() => setSearchTerm('')}>
-              ×
-            </button>
-          )}
-        </div>
-
         {filteredFactures.length === 0 ? (
           <p className="no-results">Aucune facture trouvée.</p>
         ) : (

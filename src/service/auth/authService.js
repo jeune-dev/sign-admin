@@ -1,6 +1,6 @@
-import api, { setToken, setUser, clearAuth } from '../api';
+import api, { setUser, clearUser, setStoredToken } from '../api';
 
-/* Validation identifiant */
+/* Validation du format identifiant */
 export const validateIdentifiant = (value) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^[0-9]{10}$/;
@@ -10,41 +10,44 @@ export const validateIdentifiant = (value) => {
 
 /* Login */
 export const login = async (identifiant, password) => {
-  try {
-    const response = await api.post('/auth/login', {
-      identifiant,
-      mot_de_passe: password
-    });
+  const response = await api.post('/auth/login', {
+    identifiant,
+    mot_de_passe: password
+  });
 
-    const { token, utilisateur } = response.data;
-    setToken(token);
-    setUser(utilisateur);
-
-    return utilisateur;
-  } catch (error) {
-    throw handleApiError(error);
-  }
+  const { utilisateur, accessToken, token: legacyToken } = response.data;
+  const theToken = accessToken || legacyToken; // compatibilité ancien et nouveau backend
+  setUser(utilisateur);
+  if (theToken) setStoredToken(theToken);
+  return utilisateur;
 };
 
 /* Logout */
-export const logout = () => clearAuth();
-
-/* Error handler */
-export const handleApiError = (error) => {
-  if (error.response) {
-    switch (error.response.status) {
-      case 401: return 'Identifiant ou mot de passe incorrect';
-      case 400: return 'Identifiant ou mot de passe incorrect';
-      case 404: return 'Service d\'authentification introuvable';
-      case 500: return 'Erreur interne du serveur';
-      default: return error.response.data?.message || 'Erreur serveur, veuillez réessayer';
-    }
+export const logout = async () => {
+  try {
+    await api.post('/auth/logout');
+  } finally {
+    clearUser();
   }
-  if (error.request) return 'Erreur réseau, vérifiez votre connexion internet';
-  return 'Identifiant ou mot de passe incorrect';
 };
 
-/* Form validation */
+/* Gestion des erreurs API */
+export const handleApiError = (error) => {
+  if (error?.response) {
+    switch (error.response.status) {
+      case 401: return 'Identifiant ou mot de passe incorrect';
+      case 400: return error.response.data?.message || 'Identifiant ou mot de passe incorrect';
+      case 404: return 'Service d\'authentification introuvable';
+      case 429: return 'Trop de tentatives. Réessayez dans 15 minutes.';
+      case 500: return 'Erreur interne du serveur';
+      default:  return error.response.data?.message || 'Erreur serveur, veuillez réessayer';
+    }
+  }
+  if (error?.request) return 'Erreur réseau, vérifiez votre connexion internet';
+  return 'Une erreur inattendue s\'est produite';
+};
+
+/* Validation du formulaire de login */
 export const validateLoginForm = (identifiant, password) => {
   const errors = {};
   if (!identifiant.trim()) errors.identifiant = "L'identifiant est requis";
@@ -54,7 +57,7 @@ export const validateLoginForm = (identifiant, password) => {
   return errors;
 };
 
-/* Récupérer utilisateur connecté */
+/* Récupérer l'utilisateur connecté (info affichage) */
 export const getUser = () => {
   const user = localStorage.getItem('utilisateur');
   return user ? JSON.parse(user) : null;

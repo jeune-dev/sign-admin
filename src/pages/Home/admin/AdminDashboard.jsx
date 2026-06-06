@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import Swal from 'sweetalert2';
+import SwalCustom from '../../../utils/swal.config';
 import { getUser, logout as authLogout } from '../../../service/auth/authService';
 
 // Import des composants
@@ -79,12 +79,13 @@ export default function AdminDashboard() {
   useEffect(() => {
     const justLoggedIn = sessionStorage.getItem('adminJustLoggedIn');
     if (justLoggedIn === 'true') {
-      Swal.fire({
+      SwalCustom.fire({
         icon: 'success',
         title: 'Connexion réussie !',
         text: "Bienvenue dans l'espace administrateur",
         timer: 3000,
-        showConfirmButton: false
+        timerProgressBar: true,
+        showConfirmButton: false,
       });
       sessionStorage.removeItem('adminJustLoggedIn');
     }
@@ -92,18 +93,18 @@ export default function AdminDashboard() {
 
   // Déconnexion
   const handleLogout = () => {
-    Swal.fire({
+    SwalCustom.fire({
       title: 'Déconnexion',
       text: 'Êtes-vous sûr de vouloir vous déconnecter ?',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'Oui',
+      confirmButtonText: 'Déconnecter',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#000000'
     }).then((result) => {
       if (result.isConfirmed) {
-        authLogout();
-        window.location.href = '/sign/login';
+        authLogout().finally(() => {
+          window.location.href = '/sign/login';
+        });
       }
     });
   };

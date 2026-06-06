@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
-
 import "../../assets/css/Login.css";
-import backgroundImg from "../../assets/images/image_de_fond.png";
 import { login, validateLoginForm, handleApiError } from "../../service/auth/authService";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,9 +15,7 @@ export default function Login() {
 
   useEffect(() => {
     document.title = "SIGN APP | Connexion";
-    return () => {
-      document.body.style.overflow = "auto";
-    };
+    return () => { document.body.style.overflow = "auto"; };
   }, []);
 
   const handleChange = (e) => {
@@ -30,21 +26,15 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationErrors = validateLoginForm(formData.identifiant, formData.password);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      Object.values(validationErrors).forEach((err) =>
-        toast.error(err, { autoClose: 4000 })
-      );
+      Object.values(validationErrors).forEach((err) => toast.error(err, { autoClose: 4000 }));
       return;
     }
-
     setIsLoading(true);
-
     try {
       const utilisateur = await login(formData.identifiant, formData.password);
-
       if (utilisateur.role === "Admin") {
         toast.success("Connexion réussie !", { autoClose: 2000 });
         sessionStorage.setItem('adminJustLoggedIn', 'true');
@@ -61,18 +51,19 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page" style={{ backgroundImage: `url(${backgroundImg})` }}>
+    <div className="login-page">
       <ToastContainer position="top-right" newestOnTop pauseOnHover closeOnClick draggable />
 
       <div className="login-card">
 
         {/* Badge Panel Administrateur */}
         <div className="admin-badge">
-          <Shield size={13} className="badge-icon" />
+          <Shield size={12} className="badge-icon" />
           <span>PANEL ADMINISTRATEUR</span>
         </div>
+        <hr className="login-divider" />
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate autoComplete="off">
           <div className="form-group">
             <label>Identifiant</label>
             <div className="input-wrapper">
@@ -80,11 +71,13 @@ export default function Login() {
               <input
                 type="text"
                 name="identifiant"
-                placeholder="admin@organisation.com"
+                placeholder="Entrez votre identifiant"
                 value={formData.identifiant}
                 onChange={handleChange}
                 className={errors.identifiant ? "error" : ""}
-                autoComplete="username"
+                autoComplete="off"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
               />
             </div>
             {errors.identifiant && <span className="error-text">{errors.identifiant}</span>}
@@ -97,11 +90,13 @@ export default function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="••••••••"
+                placeholder="Entrez votre mot de passe"
                 value={formData.password}
                 onChange={handleChange}
                 className={errors.password ? "error" : ""}
-                autoComplete="current-password"
+                autoComplete="new-password"
+                readOnly
+                onFocus={(e) => e.target.removeAttribute('readonly')}
               />
               <button
                 type="button"
@@ -123,6 +118,8 @@ export default function Login() {
           </div>
         </form>
       </div>
+
+      <p className="login-copyright">© 2025 SIGN APP — Tous droits réservés</p>
     </div>
   );
 }

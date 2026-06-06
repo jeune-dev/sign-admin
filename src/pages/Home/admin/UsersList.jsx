@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard } from 'lucide-react';
-import Swal from 'sweetalert2';
+import SwalCustom from '../../../utils/swal.config';
 import {
   listeUtilisateurs,
   activerUtilisateur,
@@ -29,7 +29,7 @@ export default function UsersList() {
         setUsersList(formatted);
         setFilteredUsers(formatted);
       } catch {
-        Swal.fire('Erreur', 'Impossible de récupérer les utilisateurs', 'error');
+        SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les utilisateurs' });
       } finally {
         setLoading(false);
       }
@@ -62,13 +62,12 @@ export default function UsersList() {
     const isActif = user.statut === 'actif';
     const action = isActif ? 'désactiver' : 'activer';
 
-    const result = await Swal.fire({
+    const result = await SwalCustom.fire({
       title: `Voulez-vous ${action} cet utilisateur ?`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Oui',
+      confirmButtonText: 'Confirmer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#000'
     });
 
     if (!result.isConfirmed) return;
@@ -82,9 +81,9 @@ export default function UsersList() {
           u.id === user.id ? { ...u, statut: isActif ? 'inactif' : 'actif' } : u
         )
       );
-      Swal.fire('Succès', `Utilisateur ${action}`, 'success');
+      SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${action}é avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
     } catch {
-      Swal.fire('Erreur', 'Impossible de modifier le statut', 'error');
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
     }
   };
 
@@ -94,21 +93,13 @@ export default function UsersList() {
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
+  const prevPage = () => setCurrentPage(p => Math.max(p - 1, 1));
+  const nextPage = () => setCurrentPage(p => Math.min(p + 1, totalPages));
+
   if (loading) return <div className="loading-spinner">Chargement des utilisateurs...</div>;
 
   return (
     <div className="userslist-container">
-      {/* En-tête */}
-      <div className="userslist-header">
-        <div className="header-icon">
-          <Users size={28} />
-        </div>
-        <div>
-          <h1 className="userslist-title">Liste des utilisateurs</h1>
-          <p className="userslist-subtitle">Gérez tous les utilisateurs de la plateforme</p>
-        </div>
-      </div>
-
       {/* Barre de recherche */}
       <div className="search-section">
         <div className="search-wrapper">

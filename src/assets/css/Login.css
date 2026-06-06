@@ -1,98 +1,104 @@
 /* ============================================================
    LOGIN PAGE
    ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 .login-page {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 100vw;
-  min-height: 100vh;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  position: relative;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #ebebed;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  padding: 0 16px;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Overlay léger */
-.login-page::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.18);
-  z-index: 1;
+/* ============================================================
+   LOGO AU-DESSUS DE LA CARD
+   ============================================================ */
+.login-brand-img {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 20px;
 }
 
 /* ============================================================
    CARD
    ============================================================ */
 .login-card {
-  position: relative;
-  z-index: 2;
   background: #ffffff;
-  border-radius: 24px;
-  padding: 48px 40px 40px;
+  border-radius: 20px;
+  padding: 32px 36px 28px;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-  animation: slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  margin: 40px auto;
+  max-width: 390px;
+  border-top: 3px solid #18181b;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.06),
+    0 4px 8px rgba(0,0,0,0.05),
+    0 16px 40px rgba(0,0,0,0.10);
+  animation: slideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ============================================================
    BADGE — PANEL ADMINISTRATEUR
    ============================================================ */
 .admin-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: #f4f4f5;
-  border: 1px solid #e4e4e7;
-  border-radius: 999px;
-  padding: 7px 16px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #3f3f46;
-  margin: 0 auto 40px;
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  background: #18181b;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fff;
   width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 40px;
+  margin: 0 auto 28px;
 }
 
 .badge-icon {
-  color: #71717a;
+  color: #a1a1aa;
   flex-shrink: 0;
+}
+
+/* Séparateur sous le badge */
+.login-divider {
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  margin: 0 0 28px;
 }
 
 /* ============================================================
    FORM GROUPS
    ============================================================ */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 7px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: #27272a;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .input-wrapper {
@@ -103,37 +109,39 @@
 
 .input-icon {
   position: absolute;
-  left: 14px;
+  left: 13px;
   color: #a1a1aa;
   pointer-events: none;
 }
 
 .login-card input {
   width: 100%;
-  padding: 12px 14px 12px 42px;
+  padding: 12px 14px 12px 40px;
   border: 1.5px solid #e4e4e7;
-  border-radius: 12px;
+  border-radius: 10px;
   font-size: 14px;
   color: #18181b;
   background: #fafafa;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   box-sizing: border-box;
 }
 
 .login-card input::placeholder {
-  color: #a1a1aa;
+  color: #c4c4c8;
+  font-weight: 400;
 }
 
 .login-card input:focus {
   outline: none;
   background: #fff;
-  border-color: #a1a1aa;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  border-color: #18181b;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
 }
 
 .login-card input.error {
   border-color: #ef4444;
-  background: #fff7f7;
+  background: #fff8f8;
 }
 
 .error-text {
@@ -141,12 +149,12 @@
   font-size: 11.5px;
   margin-top: 5px;
   display: block;
+  font-weight: 500;
 }
 
-/* Toggle mot de passe */
 .password-toggle {
   position: absolute;
-  right: 14px;
+  right: 12px;
   background: none;
   border: none;
   cursor: pointer;
@@ -158,7 +166,7 @@
 }
 
 .password-toggle:hover {
-  color: #52525b;
+  color: #18181b;
 }
 
 /* ============================================================
@@ -170,41 +178,47 @@
   background: #18181b;
   color: #ffffff;
   border: none;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: 10px;
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   margin-top: 10px;
 }
 
 .login-button:hover:not(:disabled) {
   background: #27272a;
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }
 
 .login-button:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: none;
 }
 
 .login-button:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
 /* ============================================================
-   FOOTER — MOT DE PASSE OUBLIÉ
+   FOOTER
    ============================================================ */
 .login-footer {
   text-align: center;
-  margin-top: 22px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .forgot-link {
   font-size: 12.5px;
   color: #71717a;
   text-decoration: none;
+  font-weight: 500;
   transition: color 0.2s;
 }
 
@@ -213,17 +227,26 @@
   text-decoration: underline;
 }
 
+/* Texte copyright sous la card */
+.login-copyright {
+  margin-top: 20px;
+  font-size: 11.5px;
+  color: #a1a1aa;
+  font-family: 'Inter', sans-serif;
+}
+
 /* ============================================================
    TOAST
    ============================================================ */
 .Toastify__toast {
-  border-radius: 12px !important;
-  font-family: inherit !important;
-  font-size: 14px !important;
+  border-radius: 10px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
 }
 
 .Toastify__toast--success {
-  background: #10b981 !important;
+  background: #18181b !important;
 }
 
 .Toastify__toast--error {
@@ -235,8 +258,7 @@
    ============================================================ */
 @media (max-width: 480px) {
   .login-card {
-    margin: 24px 16px;
-    padding: 36px 24px 32px;
-    border-radius: 20px;
+    padding: 32px 22px 28px;
+    border-radius: 16px;
   }
 }

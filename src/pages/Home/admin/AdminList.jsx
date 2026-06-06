@@ -10,11 +10,14 @@ import {
   Mail,
   Phone,
   UserCheck,
-  UserX
+  UserX,
+  MapPin,
+  CreditCard,
+  Shield
 } from 'lucide-react';
-import Swal from 'sweetalert2';
+import SwalCustom from '../../../utils/swal.config';
 import {
-  listeUtilisateurs,
+  listerAdmins,
   activerUtilisateur,
   desactiverUtilisateur
 } from '../../../service/admin/adminService';
@@ -28,20 +31,29 @@ export default function UsersList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
+  const [imgErrors, setImgErrors] = useState({});
 
   // Charger utilisateurs
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const data = await listeUtilisateurs();
-        const formatted = (data.utilisateurs || []).map(user => ({
+        const data = await listerAdmins();
+        const formatted = (data.admins || []).map(user => ({
           ...user,
           statut: user.statut?.toLowerCase() || 'inactif'
         }));
         setUsersList(formatted);
         setFilteredUsers(formatted);
-      } catch {
-        Swal.fire('Erreur', 'Impossible de récupérer les utilisateurs', 'error');
+      } catch (err) {
+        const status = err?.response?.status;
+        const msg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
+        if (status === 401) {
+          SwalCustom.fire({ icon: 'warning', title: 'Session expirée', text: 'Veuillez vous reconnecter. (' + msg + ')' });
+        } else if (!err?.response) {
+          SwalCustom.fire({ icon: 'warning', title: 'Connexion impossible', text: 'Le serveur ne répond pas. Attendez 30s puis rechargez la page.' });
+        } else {
+          SwalCustom.fire({ icon: 'error', title: 'Erreur ' + (status || ''), text: msg });
+        }
       } finally {
         setLoading(false);
       }
@@ -74,13 +86,12 @@ export default function UsersList() {
     const isActif = user.statut === 'actif';
     const action = isActif ? 'désactiver' : 'activer';
 
-    const result = await Swal.fire({
+    const result = await SwalCustom.fire({
       title: `Voulez-vous ${action} cet utilisateur ?`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Oui',
+      confirmButtonText: 'Confirmer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#000'
     });
 
     if (!result.isConfirmed) return;
@@ -94,9 +105,9 @@ export default function UsersList() {
           u.id === user.id ? { ...u, statut: isActif ? 'inactif' : 'actif' } : u
         )
       );
-      Swal.fire('Succès', `Utilisateur ${action}`, 'success');
+      SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${action}é avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
     } catch {
-      Swal.fire('Erreur', 'Impossible de modifier le statut', 'error');
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
     }
   };
 
@@ -115,17 +126,6 @@ export default function UsersList() {
 
   return (
     <div className="userslist-container">
-      {/* En-tête */}
-      <div className="userslist-header">
-        <div className="header-icon">
-          <Users size={28} />
-        </div>
-        <div>
-          <h1 className="userslist-title">Liste des utilisateurs</h1>
-          <p className="userslist-subtitle">Gérez tous les utilisateurs de la plateforme</p>
-        </div>
-      </div>
-
       {/* Barre de recherche */}
       <div className="search-section">
         <div className="search-wrapper">
@@ -175,8 +175,12 @@ export default function UsersList() {
                       <td>
                         <div className="user-info-cell">
                           <div className="user-avatar">
-                            {user.photoProfil ? (
-                              <img src={user.photoProfil} alt="profil" />
+                            {user.photoProfil && !imgErrors[`row-${user.id}`] ? (
+                              <img
+                                src={user.photoProfil}
+                                alt="profil"
+                                onError={() => setImgErrors(prev => ({ ...prev, [`row-${user.id}`]: true }))}
+                              />
                             ) : (
                               <span>{getInitials(user.prenom, user.nom)}</span>
                             )}
@@ -259,14 +263,21 @@ export default function UsersList() {
       {selectedUser && (
         <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
           <div className="modern-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedUser(null)}>×</button>
+            <button className="modal-close" onClick={() => setSelectedUser(null)}>
+              <XIcon size={16} />
+            </button>
 
+            <div className="modal-scrollable">
             <div className="modal-cover"></div>
 
             <div className="modal-avatar-wrapper">
               <div className="modal-avatar">
-                {selectedUser.photoProfil ? (
-                  <img src={selectedUser.photoProfil} alt="profil" />
+                {selectedUser.photoProfil && !imgErrors[`avatar-${selectedUser.id}`] ? (
+                  <img
+                    src={selectedUser.photoProfil}
+                    alt="profil"
+                    onError={() => setImgErrors(prev => ({ ...prev, [`avatar-${selectedUser.id}`]: true }))}
+                  />
                 ) : (
                   <span>{getInitials(selectedUser.prenom, selectedUser.nom)}</span>
                 )}
@@ -278,7 +289,10 @@ export default function UsersList() {
             </div>
 
             <h2 className="modal-name">{selectedUser.prenom} {selectedUser.nom}</h2>
-            <p className="modal-role">{selectedUser.role || 'Utilisateur'}</p>
+            <p className="modal-role">
+              <Shield size={13} style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }} />
+              {selectedUser.role || 'Administrateur'}
+            </p>
 
             <div className="modal-divider"></div>
 
@@ -297,7 +311,47 @@ export default function UsersList() {
                   <p>{selectedUser.telephone || '-'}</p>
                 </div>
               </div>
+              <div className="modal-info-item">
+                <MapPin size={18} />
+                <div>
+                  <label>Adresse</label>
+                  <p>{selectedUser.adresse || '-'}</p>
+                </div>
+              </div>
+              <div className="modal-info-item">
+                <CreditCard size={18} />
+                <div>
+                  <label>N° CNI</label>
+                  <p>{selectedUser.carte_identite_national_num || '-'}</p>
+                </div>
+              </div>
+              <div className="modal-info-item">
+                <Shield size={18} />
+                <div>
+                  <label>Statut du compte</label>
+                  <p style={{ color: selectedUser.statut === 'actif' ? '#15803d' : '#b91c1c', fontWeight: 700 }}>
+                    {selectedUser.statut === 'actif' ? '● Actif' : '● Inactif'}
+                  </p>
+                </div>
+              </div>
+              <div className="modal-info-item modal-photo-item">
+                <div className="modal-photo-preview">
+                  {selectedUser.photoProfil && !imgErrors[`photo-${selectedUser.id}`] ? (
+                    <img
+                      src={selectedUser.photoProfil}
+                      alt="Photo de profil"
+                      onError={() => setImgErrors(prev => ({ ...prev, [`photo-${selectedUser.id}`]: true }))}
+                    />
+                  ) : (
+                    <div className="modal-no-photo">
+                      <span>{getInitials(selectedUser.prenom, selectedUser.nom)}</span>
+                      <small>Aucune photo enregistrée</small>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+            </div>{/* fin modal-scrollable */}
 
             <div className="modal-actions">
               <button className="modal-btn modal-btn-secondary" onClick={() => setSelectedUser(null)}>
