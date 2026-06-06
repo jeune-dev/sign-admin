@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ScrollText
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import { getUser, logout as authLogout } from '../../../service/auth/authService';
@@ -20,6 +21,7 @@ import { getUser, logout as authLogout } from '../../../service/auth/authService
 import Dashboard from './Dashboard';
 import UsersList from './UsersList';
 import FacturesList from './FactureList';
+import ContratsList from './ContratsList';
 import AdminList from './AdminList';
 import Profile from './Profile';
 
@@ -55,6 +57,7 @@ export default function AdminDashboard() {
     { id: 'dashboard', label: 'Accueil', icon: Home },
     { id: 'users', label: 'Utilisateurs', icon: Users },
     { id: 'factures', label: 'Factures', icon: FileText },
+    { id: 'contrats', label: 'Contrats', icon: ScrollText },
     { id: 'admins', label: 'Administrateurs', icon: Shield },
     { id: 'profile', label: 'Mon profil', icon: User },
     { id: 'logout', label: 'Déconnexion', icon: LogOut }
@@ -163,17 +166,6 @@ export default function AdminDashboard() {
         </button>
       )}
 
-      {/* Bouton flèche à côté de la sidebar (UNIQUEMENT sur desktop) */}
-      {!isMobile && (
-        <button
-          className="sidebar-float-toggle"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{ left: sidebarOpen ? 280 : 20 }}
-        >
-          {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-        </button>
-      )}
-
       {/* Sidebar */}
       <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''} ${isMobile ? 'mobile' : ''}`}>
         <div className="sidebar-header">
@@ -237,6 +229,17 @@ export default function AdminDashboard() {
         {/* ===== FIN SIDEBAR FOOTER ===== */}
       </aside>
 
+      {/* Bouton toggle desktop — placé APRÈS la sidebar pour que le sélecteur CSS ~ fonctionne */}
+      {!isMobile && (
+        <button
+          className="sidebar-float-toggle"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? 'Réduire la sidebar' : 'Ouvrir la sidebar'}
+        >
+          {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        </button>
+      )}
+
       {/* Contenu principal */}
       <main className="main-content">
         <div className="topbar">
@@ -244,6 +247,7 @@ export default function AdminDashboard() {
             {activeMenu === 'dashboard' && 'Tableau de bord'}
             {activeMenu === 'users' && 'Gestion des utilisateurs'}
             {activeMenu === 'factures' && 'Gestion des factures'}
+            {activeMenu === 'contrats' && 'Gestion des contrats'}
             {activeMenu === 'admins' && 'Gestion des administrateurs'}
             {activeMenu === 'profile' && 'Mon profil'}
           </h1>
@@ -253,6 +257,7 @@ export default function AdminDashboard() {
           {activeMenu === 'dashboard' && <Dashboard dashboardData={dashboardData} />}
           {activeMenu === 'users' && <UsersList />}
           {activeMenu === 'factures' && <FacturesList />}
+          {activeMenu === 'contrats' && <ContratsList />}
           {activeMenu === 'admins' && <AdminList />}
           {activeMenu === 'profile' && <Profile currentUser={currentUser} />}
         </div>
