@@ -1,21 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Search, ChevronLeft, ChevronRight, FileText,
-  LayoutGrid, Briefcase, Handshake, Key, Banknote,
-  PenLine, ShieldCheck, Lock, HardHat, Building2,
-} from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, FileText,
+         LayoutGrid, Briefcase, Handshake, Key, Banknote,
+         PenLine, ShieldCheck, Lock, HardHat, Building2 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
-import {
-  listeContratsPrestation,
-  listeContratsPartenariat,
-  listeContratsLocation,
-  listeReconnaissancesDette,
-  listeProcurations,
-  listeContratsCaution,
-  listeContratsConfidentialite,
-  listeContratsTravail,
-  listeContratsBail,
-} from '../../../service/admin/adminService';
+import { listeContrats } from '../../../service/admin/adminService';
 
 import '../../../assets/css/factures.css';
 import '../../../assets/css/contrats.css';
@@ -32,42 +20,13 @@ const TYPE_CONFIG = {
   bail:            { label: 'Bail immobilier',         Icon: Building2,   display: null },
 };
 
-const TYPE_LABELS = Object.fromEntries(
-  Object.entries(TYPE_CONFIG).map(([k, v]) => [k, v.label])
-);
-
-const SOURCES = [
-  { fn: listeContratsPrestation,      typeCode: 'prestation',      getDate: (d) => d.date_contrat },
-  { fn: listeContratsPartenariat,     typeCode: 'partenariat',     getDate: (d) => d.date_contrat },
-  { fn: listeContratsLocation,        typeCode: 'location',        getDate: (d) => d.date_contrat },
-  { fn: listeReconnaissancesDette,    typeCode: 'dette',           getDate: (d) => d.date_contrat },
-  { fn: listeProcurations,            typeCode: 'procuration',     getDate: (d) => d.date_contrat },
-  { fn: listeContratsCaution,         typeCode: 'caution',         getDate: (d) => d.date_contrat },
-  { fn: listeContratsConfidentialite, typeCode: 'confidentialite', getDate: (d) => d.date_contrat },
-  { fn: listeContratsTravail,         typeCode: 'travail',         getDate: (d) => d.date_debut },
-  { fn: listeContratsBail,            typeCode: 'bail',            getDate: (d) => d.date_debut_bail },
-];
-
-function normalize(items, typeCode, getDate) {
-  return (items || []).map((c) => ({
-    id:             c.id,
-    numero_contrat: c.numero_contrat,
-    typeCode,
-    type:           TYPE_LABELS[typeCode],
-    date:           getDate(c) || c.createdAt,
-    statut:         c.statut,
-    contrat_pdf:    c.contrat_pdf,
-    createdAt:      c.createdAt,
-  }));
-}
-
 const STATUS_MAP = {
-  en_attente:   { label: 'En attente', css: 'badge-pending'  },
-  signe:        { label: 'Signé',      css: 'badge-signed'   },
-  Actif:        { label: 'Actif',      css: 'badge-signed'   },
-  'Résilié':    { label: 'Résilié',    css: 'badge-resilie'  },
-  'Expiré':     { label: 'Expiré',     css: 'badge-expired'  },
-  'En attente': { label: 'En attente', css: 'badge-pending'  },
+  en_attente:   { label: 'En attente', css: 'badge-pending' },
+  signe:        { label: 'Signé',      css: 'badge-signed'  },
+  Actif:        { label: 'Actif',      css: 'badge-signed'  },
+  'Résilié':    { label: 'Résilié',    css: 'badge-resilie' },
+  'Expiré':     { label: 'Expiré',     css: 'badge-expired' },
+  'En attente': { label: 'En attente', css: 'badge-pending' },
 };
 
 function StatusBadge({ statut }) {
@@ -86,19 +45,14 @@ export default function ContratsList() {
   useEffect(() => { fetchContrats(); }, []);
 
   const fetchContrats = async () => {
-    const results = await Promise.allSettled(
-      SOURCES.map(({ fn, typeCode, getDate }) =>
-        fn().then((res) => normalize(res.data || [], typeCode, getDate))
-      )
-    );
-
-    const all = results
-      .filter((r) => r.status === 'fulfilled')
-      .flatMap((r) => r.value);
-
-    all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    setContrats(all);
-    setLoading(false);
+    try {
+      const res = await listeContrats();
+      setContrats(res.contrats || []);
+    } catch {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les contrats' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, typeFilter]);
@@ -106,7 +60,9 @@ export default function ContratsList() {
   const filtered = contrats.filter((c) => {
     const s = searchTerm.toLowerCase().trim();
     const matchType   = typeFilter === 'all' || c.typeCode === typeFilter;
-    const matchSearch = !s || c.numero_contrat?.toLowerCase().includes(s) || c.type?.toLowerCase().includes(s);
+    const matchSearch = !s
+      || c.numero_contrat?.toLowerCase().includes(s)
+      || c.type?.toLowerCase().includes(s);
     return matchType && matchSearch;
   });
 
@@ -199,7 +155,7 @@ export default function ContratsList() {
                     <td>
                       {c.date
                         ? new Date(c.date).toLocaleDateString('fr-FR')
-                        : new Date(c.createdAt).toLocaleDateString('fr-FR')}
+                        : '-'}
                     </td>
                     <td><StatusBadge statut={c.statut} /></td>
                     <td className="actions">

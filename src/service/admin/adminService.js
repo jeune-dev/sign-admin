@@ -78,48 +78,13 @@ export const desactiverUtilisateur = async (id) => {
   return response.data;
 };
 
-/* ─── Listes de contrats (tous types) ───────────────────────── */
-export const listeContratsPrestation = async () => {
-  const response = await api.get('/professionnel/contrat-prestation/');
+/* ─── Contrats (endpoint admin unifié) ──────────────────────── */
+export const listeContrats = async () => {
+  const response = await api.get('/admin/liste-contrats?limit=1000');
   return response.data;
 };
 
-export const listeContratsPartenariat = async () => {
-  const response = await api.get('/professionnel/contrat-partenariat/');
-  return response.data;
-};
-
-export const listeContratsLocation = async () => {
-  const response = await api.get('/professionnel/contrat-location/');
-  return response.data;
-};
-
-export const listeReconnaissancesDette = async () => {
-  const response = await api.get('/professionnel/reconnaissance-dette/');
-  return response.data;
-};
-
-export const listeProcurations = async () => {
-  const response = await api.get('/professionnel/procuration/');
-  return response.data;
-};
-
-export const listeContratsCaution = async () => {
-  const response = await api.get('/professionnel/contrat-caution/');
-  return response.data;
-};
-
-export const listeContratsConfidentialite = async () => {
-  const response = await api.get('/professionnel/contrat-confidentialite/');
-  return response.data;
-};
-
-export const listeContratsTravail = async () => {
-  const response = await api.get('/professionnel/contratTravail/');
-  return response.data;
-};
-
-export const listeContratsBail = async () => {
-  const response = await api.get('/professionnel/contratBail/mes-contrat-immobilier');
+export const nombreContrats = async () => {
+  const response = await api.get('/admin/nombre-contrats');
   return response.data;
 };
