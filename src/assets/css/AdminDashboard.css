@@ -680,7 +680,8 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   height: 240px;
-  padding: 20px 0;
+  /* padding-bottom élargi pour loger le label du mois (bottom: -28px) */
+  padding: 20px 0 34px;
   gap: 12px;
   width: 100%;
 }
@@ -1596,6 +1597,8 @@ body {
 .chart-container .chart-placeholder {
   height: 260px;
   align-items: flex-end;
+  /* on laisse déborder pour ne pas couper les labels des mois */
+  overflow: visible;
 }
 
 /* En-têtes de section plus aérés */

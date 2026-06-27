@@ -182,7 +182,6 @@ export default function Dashboard() {
                   </span>
                   <span className="repartition-value">
                     <strong>{valeur}</strong>
-                    <span className="repartition-percent">{Math.round((valeur / totalRoles) * 100)}%</span>
                   </span>
                 </div>
                 <div className="repartition-bar-track">
