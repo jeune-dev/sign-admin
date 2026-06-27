@@ -748,3 +748,214 @@
     height: 80px;
   }
 }
+
+/* ===== AJOUT D'ADMINISTRATEUR ===== */
+.btn-add-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  background: #0a0a0a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-add-admin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+}
+
+.create-admin-modal {
+  max-width: 640px;
+}
+
+.create-admin-form {
+  padding: 28px;
+}
+
+.create-admin-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.create-admin-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0a0a0a, #2a2a2a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.create-admin-sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form-field input {
+  padding: 11px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: #0a0a0a;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.08);
+}
+
+.permissions-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.permissions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.permissions-hint {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: 6px 0 16px;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.permission-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.permission-card:hover {
+  border-color: #9ca3af;
+}
+
+.permission-card--active {
+  border-color: #0a0a0a;
+  background: #f9fafb;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+}
+
+.permission-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #f3f4f6;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+}
+
+.permission-card--active .permission-check {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.permission-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.permission-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Badges de permissions dans la fiche détail */
+.perm-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.perm-badge {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #e0e7ff;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .form-grid,
+  .permissions-grid {
+    grid-template-columns: 1fr;
+  }
+  .btn-add-admin span {
+    display: none;
+  }
+}
+/* Bouton "Permissions" dans la liste des admins */
+.action-btn.btn-perms {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #e0e7ff;
+}
+.action-btn.btn-perms:hover { background: #3730a3; color: #fff; }

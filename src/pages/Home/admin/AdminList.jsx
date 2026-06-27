@@ -13,15 +13,33 @@ import {
   UserX,
   MapPin,
   CreditCard,
-  Shield
+  Shield,
+  Plus,
+  KeyRound,
+  Lock
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import {
   listerAdmins,
   activerUtilisateur,
-  desactiverUtilisateur
+  desactiverUtilisateur,
+  ajoutAdmins,
+  modifierPermissionsAdmin
 } from '../../../service/admin/adminService';
 import "../../../assets/css/ListeAdmin.css";
+
+/* Catalogue des permissions attribuables à un administrateur (doit matcher le backend) */
+const PERMISSIONS_CATALOGUE = [
+  { key: 'users',    label: 'Utilisateurs', desc: 'Voir et gérer les utilisateurs' },
+  { key: 'contrats', label: 'Contrats',     desc: 'Consulter les contrats et leurs PDF' },
+  { key: 'factures', label: 'Factures',     desc: 'Consulter les factures et leurs PDF' },
+  { key: 'admins',   label: 'Administrateurs', desc: 'Créer et gérer les administrateurs' },
+];
+
+const FORM_VIDE = {
+  nom: '', prenom: '', email: '', mot_de_passe: '',
+  telephone: '', adresse: '', carte_identite_national_num: '',
+};
 
 export default function UsersList() {
   const [usersList, setUsersList] = useState([]);
@@ -32,6 +50,121 @@ export default function UsersList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [imgErrors, setImgErrors] = useState({});
+
+  // ── Création d'un administrateur ──
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState(FORM_VIDE);
+  const [permissions, setPermissions] = useState([]);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // ── Modification des permissions ──
+  const [permsAdmin, setPermsAdmin] = useState(null);
+  const [permsSelection, setPermsSelection] = useState([]);
+  const [savingPerms, setSavingPerms] = useState(false);
+
+  const ouvrirPermissions = (admin) => {
+    setPermsAdmin(admin);
+    setPermsSelection(Array.isArray(admin.permissions) ? admin.permissions : []);
+  };
+
+  const togglePermSelection = (key) => {
+    setPermsSelection(prev => prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key]);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permsAdmin) return;
+    setSavingPerms(true);
+    try {
+      const res = await modifierPermissionsAdmin(permsAdmin.id, permsSelection);
+      const updated = res?.admin;
+      setUsersList(prev => prev.map(u => u.id === permsAdmin.id
+        ? { ...u, permissions: updated ? updated.permissions : (permsSelection.length ? permsSelection : null) }
+        : u));
+      setPermsAdmin(null);
+      SwalCustom.fire({ icon: 'success', title: 'Permissions mises à jour', timer: 2000, timerProgressBar: true, showConfirmButton: false });
+    } catch (err) {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Mise à jour impossible' });
+    } finally {
+      setSavingPerms(false);
+    }
+  };
+
+  const chargerAdmins = async () => {
+    try {
+      const data = await listerAdmins();
+      const formatted = (data.admins || []).map(user => ({
+        ...user,
+        statut: user.statut?.toLowerCase() || 'inactif'
+      }));
+      setUsersList(formatted);
+      setFilteredUsers(formatted);
+    } catch (err) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
+      if (status === 401) {
+        SwalCustom.fire({ icon: 'warning', title: 'Session expirée', text: 'Veuillez vous reconnecter. (' + msg + ')' });
+      } else if (!err?.response) {
+        SwalCustom.fire({ icon: 'warning', title: 'Connexion impossible', text: 'Le serveur ne répond pas. Attendez 30s puis rechargez la page.' });
+      } else {
+        SwalCustom.fire({ icon: 'error', title: 'Erreur ' + (status || ''), text: msg });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const togglePermission = (key) => {
+    setPermissions(prev => prev.includes(key) ? prev.filter(p => p !== key) : [...prev, key]);
+  };
+
+  const resetCreateForm = () => {
+    setForm(FORM_VIDE);
+    setPermissions([]);
+    setPhotoFile(null);
+  };
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    if (!form.nom.trim() || !form.prenom.trim() || !form.email.trim() || !form.mot_de_passe) {
+      SwalCustom.fire({ icon: 'warning', title: 'Champs requis', text: 'Nom, prénom, email et mot de passe sont obligatoires.' });
+      return;
+    }
+    if (form.mot_de_passe.length < 8) {
+      SwalCustom.fire({ icon: 'warning', title: 'Mot de passe trop court', text: 'Le mot de passe doit contenir au moins 8 caractères.' });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('nom', form.nom.trim());
+      fd.append('prenom', form.prenom.trim());
+      fd.append('email', form.email.trim());
+      fd.append('mot_de_passe', form.mot_de_passe);
+      if (form.telephone.trim()) fd.append('telephone', form.telephone.trim());
+      if (form.adresse.trim()) fd.append('adresse', form.adresse.trim());
+      if (form.carte_identite_national_num.trim()) fd.append('carte_identite_national_num', form.carte_identite_national_num.trim());
+      fd.append('permissions', JSON.stringify(permissions));
+      if (photoFile) fd.append('photoProfil', photoFile);
+
+      await ajoutAdmins(fd);
+      SwalCustom.fire({ icon: 'success', title: 'Administrateur créé', text: `${form.prenom} ${form.nom} a été ajouté avec succès.`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
+      setShowCreate(false);
+      resetCreateForm();
+      await chargerAdmins();
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || "Impossible de créer l'administrateur";
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: msg });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Charger utilisateurs
   useEffect(() => {
@@ -144,8 +277,12 @@ export default function UsersList() {
           )}
         </div>
         <div className="search-stats">
-          {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''}
+          {filteredUsers.length} administrateur{filteredUsers.length > 1 ? 's' : ''}
         </div>
+        <button className="btn-add-admin" onClick={() => { resetCreateForm(); setShowCreate(true); }}>
+          <Plus size={18} />
+          <span>Ajouter un administrateur</span>
+        </button>
       </div>
 
       {/* Tableau */}
@@ -217,6 +354,10 @@ export default function UsersList() {
                         <button className="action-btn btn-view" onClick={() => setSelectedUser(user)} title="Voir détails">
                           <Eye size={16} />
                           <span>Voir</span>
+                        </button>
+                        <button className="action-btn btn-perms" onClick={() => ouvrirPermissions(user)} title="Modifier les permissions">
+                          <KeyRound size={16} />
+                          <span>Permissions</span>
                         </button>
                         <button
                           className={`action-btn ${isActif ? 'btn-disable' : 'btn-enable'}`}
@@ -334,6 +475,22 @@ export default function UsersList() {
                   </p>
                 </div>
               </div>
+              <div className="modal-info-item">
+                <KeyRound size={18} />
+                <div>
+                  <label>Permissions</label>
+                  {(!selectedUser.permissions || selectedUser.permissions.length === 0) ? (
+                    <p style={{ fontWeight: 700, color: '#1e40af' }}>Accès complet (super-admin)</p>
+                  ) : (
+                    <div className="perm-badges">
+                      {selectedUser.permissions.map(p => {
+                        const meta = PERMISSIONS_CATALOGUE.find(x => x.key === p);
+                        return <span key={p} className="perm-badge">{meta ? meta.label : p}</span>;
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="modal-info-item modal-photo-item">
                 <div className="modal-photo-preview">
                   {selectedUser.photoProfil && !imgErrors[`photo-${selectedUser.id}`] ? (
@@ -366,6 +523,154 @@ export default function UsersList() {
               >
                 {selectedUser.statut === 'actif' ? 'Désactiver' : 'Activer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CRÉATION D'ADMIN */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => !submitting && setShowCreate(false)}>
+          <div className="modern-modal create-admin-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => !submitting && setShowCreate(false)}>
+              <XIcon size={16} />
+            </button>
+
+            <form onSubmit={handleCreateAdmin} className="modal-scrollable create-admin-form">
+              <div className="create-admin-head">
+                <div className="create-admin-icon"><Shield size={22} /></div>
+                <div>
+                  <h2 className="modal-name" style={{ margin: 0 }}>Nouvel administrateur</h2>
+                  <p className="create-admin-sub">Renseignez les informations et attribuez les permissions</p>
+                </div>
+              </div>
+
+              <div className="form-grid">
+                <div className="form-field">
+                  <label>Prénom *</label>
+                  <input name="prenom" value={form.prenom} onChange={handleFormChange} placeholder="Prénom" />
+                </div>
+                <div className="form-field">
+                  <label>Nom *</label>
+                  <input name="nom" value={form.nom} onChange={handleFormChange} placeholder="Nom" />
+                </div>
+                <div className="form-field">
+                  <label>Email *</label>
+                  <input name="email" type="email" value={form.email} onChange={handleFormChange} placeholder="email@exemple.com" />
+                </div>
+                <div className="form-field">
+                  <label>Mot de passe *</label>
+                  <input name="mot_de_passe" type="password" value={form.mot_de_passe} onChange={handleFormChange} placeholder="Min. 8 caractères" />
+                </div>
+                <div className="form-field">
+                  <label>Téléphone</label>
+                  <input name="telephone" value={form.telephone} onChange={handleFormChange} placeholder="77 000 00 00" />
+                </div>
+                <div className="form-field">
+                  <label>N° CNI</label>
+                  <input name="carte_identite_national_num" value={form.carte_identite_national_num} onChange={handleFormChange} placeholder="N° carte d'identité" />
+                </div>
+                <div className="form-field form-field--full">
+                  <label>Adresse</label>
+                  <input name="adresse" value={form.adresse} onChange={handleFormChange} placeholder="Adresse" />
+                </div>
+                <div className="form-field form-field--full">
+                  <label>Photo de profil</label>
+                  <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} />
+                </div>
+              </div>
+
+              <div className="permissions-section">
+                <div className="permissions-title">
+                  <KeyRound size={16} />
+                  <span>Permissions attribuées</span>
+                </div>
+                <p className="permissions-hint">
+                  Sélectionnez les sections accessibles. Aucune sélection = accès complet (super-admin).
+                </p>
+                <div className="permissions-grid">
+                  {PERMISSIONS_CATALOGUE.map(perm => {
+                    const actif = permissions.includes(perm.key);
+                    return (
+                      <button
+                        type="button"
+                        key={perm.key}
+                        className={`permission-card ${actif ? 'permission-card--active' : ''}`}
+                        onClick={() => togglePermission(perm.key)}
+                      >
+                        <div className="permission-check">{actif ? <Check size={14} /> : <Lock size={14} />}</div>
+                        <div>
+                          <div className="permission-label">{perm.label}</div>
+                          <div className="permission-desc">{perm.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="modal-btn modal-btn-secondary" onClick={() => setShowCreate(false)} disabled={submitting}>
+                  Annuler
+                </button>
+                <button type="submit" className="modal-btn modal-btn-success" disabled={submitting}>
+                  {submitting ? 'Création…' : "Créer l'administrateur"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL MODIFICATION DES PERMISSIONS */}
+      {permsAdmin && (
+        <div className="modal-overlay" onClick={() => !savingPerms && setPermsAdmin(null)}>
+          <div className="modern-modal create-admin-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => !savingPerms && setPermsAdmin(null)}>
+              <XIcon size={16} />
+            </button>
+            <div className="modal-scrollable create-admin-form">
+              <div className="create-admin-head">
+                <div className="create-admin-icon"><KeyRound size={22} /></div>
+                <div>
+                  <h2 className="modal-name" style={{ margin: 0 }}>Permissions de {permsAdmin.prenom} {permsAdmin.nom}</h2>
+                  <p className="create-admin-sub">Choisissez les sections accessibles à cet administrateur</p>
+                </div>
+              </div>
+
+              <div className="permissions-section" style={{ borderTop: 'none', paddingTop: 0, marginTop: 8 }}>
+                <p className="permissions-hint">
+                  Aucune sélection = accès complet (super-admin).
+                </p>
+                <div className="permissions-grid">
+                  {PERMISSIONS_CATALOGUE.map(perm => {
+                    const actif = permsSelection.includes(perm.key);
+                    return (
+                      <button
+                        type="button"
+                        key={perm.key}
+                        className={`permission-card ${actif ? 'permission-card--active' : ''}`}
+                        onClick={() => togglePermSelection(perm.key)}
+                      >
+                        <div className="permission-check">{actif ? <Check size={14} /> : <Lock size={14} />}</div>
+                        <div>
+                          <div className="permission-label">{perm.label}</div>
+                          <div className="permission-desc">{perm.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="modal-btn modal-btn-secondary" onClick={() => setPermsAdmin(null)} disabled={savingPerms}>
+                  Annuler
+                </button>
+                <button type="button" className="modal-btn modal-btn-success" onClick={handleSavePermissions} disabled={savingPerms}>
+                  {savingPerms ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -83,8 +83,11 @@ api.interceptors.response.use(
 
       try {
         const refreshRes = await api.post('/auth/refresh-token');
-        if (refreshRes.data?.accessToken) {
-          setStoredToken(refreshRes.data.accessToken);
+        // Enveloppe backend : { success, message, data: { token, refreshToken } }
+        const refreshPayload = refreshRes.data?.data || refreshRes.data;
+        const newToken = refreshPayload?.accessToken || refreshPayload?.token;
+        if (newToken) {
+          setStoredToken(newToken);
         }
         processQueue(null);
         return api(original);

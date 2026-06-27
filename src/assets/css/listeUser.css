@@ -648,3 +648,32 @@
     padding: 16px 20px 20px;
   }
 }
+/* ===== AJOUTS : export CSV + suppression ===== */
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  color: #374151;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-export:hover:not(:disabled) { background: #111827; color: #fff; border-color: #111827; }
+.btn-export:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.action-btn.btn-delete {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fee2e2;
+}
+.action-btn.btn-delete:hover { background: #991b1b; color: #fff; }
+
+@media (max-width: 600px) {
+  .btn-export span { display: none; }
+}

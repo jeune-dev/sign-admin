@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Eye, Search, ChevronLeft, ChevronRight, FileText, Download } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 
-import { listeFactures } from '../../../service/admin/adminService';
+import { listeFactures, telechargerFacturePdf } from '../../../service/admin/adminService';
+import { exportToCsv } from '../../../utils/exportCsv';
 
 import '../../../assets/css/factures.css'; 
 
@@ -61,28 +62,30 @@ export default function FactureList() {
     if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
 
-  const openPdf = (base64String) => {
-    if (!base64String) {
+  const openPdf = async (fact) => {
+    if (!fact.document_pdf) {
       SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour cette facture' });
       return;
     }
 
     try {
-      const binaryString = window.atob(base64String);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const blob = await telechargerFacturePdf(fact.id);
       const url = URL.createObjectURL(blob);
-
       window.open(url, '_blank');
-
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch {
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: "Impossible d'ouvrir le PDF" });
     }
+  };
+
+  const handleExport = () => {
+    exportToCsv('factures', [
+      { header: 'N° Facture', value: (f) => f.numero_facture },
+      { header: 'Client', value: (f) => f.client ? `${f.client.prenom || ''} ${f.client.nom || ''}`.trim() : '' },
+      { header: 'Professionnel', value: (f) => f.professionnel ? `${f.professionnel.prenom || ''} ${f.professionnel.nom || ''}`.trim() : '' },
+      { header: 'Statut', value: (f) => f.statut },
+      { header: "Date d'exécution", value: (f) => f.date_execution ? new Date(f.date_execution).toLocaleDateString('fr-FR') : '' },
+    ], filteredFactures);
   };
 
   if (loading) return <p>Chargement...</p>;
@@ -104,6 +107,9 @@ export default function FactureList() {
             ×
           </button>
         )}
+        <button className="btn-export" onClick={handleExport} disabled={filteredFactures.length === 0} title="Exporter en CSV">
+          <Download size={16} /> <span>Exporter CSV</span>
+        </button>
       </div>
 
       <div className="table-container">
@@ -143,7 +149,7 @@ export default function FactureList() {
                     <td className="actions">
                       <button
                         className="btn-view"
-                        onClick={() => openPdf(fact.document_pdf)}
+                        onClick={() => openPdf(fact)}
                         title="Voir la facture PDF"
                       >
                         <FileText size={16} />

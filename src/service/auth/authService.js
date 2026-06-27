@@ -15,7 +15,10 @@ export const login = async (identifiant, password) => {
     mot_de_passe: password
   });
 
-  const { utilisateur, accessToken, token: legacyToken } = response.data;
+  // Le backend renvoie une enveloppe { success, message, data: { token, refreshToken, utilisateur } }
+  // On lit donc response.data.data (avec repli sur response.data pour un backend "plat")
+  const payload = response.data?.data || response.data;
+  const { utilisateur, accessToken, token: legacyToken } = payload;
   const theToken = accessToken || legacyToken; // compatibilité ancien et nouveau backend
   setUser(utilisateur);
   if (theToken) setStoredToken(theToken);

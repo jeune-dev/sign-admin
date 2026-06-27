@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// En haut du fichier avec les autres imports
-import adminAvatar from '../../../assets/images/admin-avatar.jpg';
 import {
   Home,
   Users,
@@ -52,16 +50,24 @@ export default function AdminDashboard() {
     usersList: []
   });
 
-  // Menu items
-  const menuItems = [
-    { id: 'dashboard', label: 'Accueil', icon: Home },
-    { id: 'users', label: 'Utilisateurs', icon: Users },
-    { id: 'factures', label: 'Factures', icon: FileText },
-    { id: 'contrats', label: 'Contrats', icon: ScrollText },
-    { id: 'admins', label: 'Administrateurs', icon: Shield },
-    { id: 'profile', label: 'Mon profil', icon: User },
-    { id: 'logout', label: 'Déconnexion', icon: LogOut }
+  // Menu items — `perm` = permission requise (null = toujours visible)
+  const allMenuItems = [
+    { id: 'dashboard', label: 'Accueil', icon: Home, perm: null },
+    { id: 'users', label: 'Utilisateurs', icon: Users, perm: 'users' },
+    { id: 'factures', label: 'Factures', icon: FileText, perm: 'factures' },
+    { id: 'contrats', label: 'Contrats', icon: ScrollText, perm: 'contrats' },
+    { id: 'admins', label: 'Administrateurs', icon: Shield, perm: 'admins' },
+    { id: 'profile', label: 'Mon profil', icon: User, perm: null },
+    { id: 'logout', label: 'Déconnexion', icon: LogOut, perm: null }
   ];
+
+  // Filtrage selon les permissions de l'admin connecté.
+  // permissions null/vide = super-admin → accès complet.
+  const perms = currentUser?.permissions;
+  const hasFullAccess = !Array.isArray(perms) || perms.length === 0;
+  const menuItems = allMenuItems.filter(
+    (item) => !item.perm || hasFullAccess || perms.includes(item.perm)
+  );
 
   // Détection mobile
   useEffect(() => {
@@ -126,15 +132,8 @@ export default function AdminDashboard() {
 
   if (!currentUser) return null;
 
-  // Récupérer les initiales
-  const getInitials = () => {
-    const prenom = currentUser.prenom || '';
-    const nom = currentUser.nom || '';
-    if (prenom && nom) {
-      return `${prenom[0]}${nom[0]}`.toUpperCase();
-    }
-    return 'AD';
-  };
+  // Initiales pour l'avatar du footer (si aucune photo de profil)
+  const initials = `${currentUser.prenom?.[0] || ''}${currentUser.nom?.[0] || ''}`.toUpperCase() || 'AD';
 
   // Tooltip pour sidebar réduite
   const MenuItemWithTooltip = ({ item, isActive, onClick }) => (
@@ -194,16 +193,16 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
- {/* Sidebar Footer avec PHOTO LOCALE */}
+ {/* Sidebar Footer */}
 <div className="sidebar-footer">
   {sidebarOpen ? (
     <div className="user-info">
       <div className="user-avatar">
-        <img 
-          src={adminAvatar} 
-          alt="Photo profil" 
-          className="user-avatar-img"
-        />
+        {currentUser.photoProfil ? (
+          <img src={currentUser.photoProfil} alt="Photo profil" className="user-avatar-img" />
+        ) : (
+          <span className="user-avatar-initials">{initials}</span>
+        )}
       </div>
       <div className="user-details">
         <div className="user-name">
@@ -217,11 +216,11 @@ export default function AdminDashboard() {
   ) : (
     <div className="user-info-collapsed">
       <div className="user-avatar-mini">
-        <img 
-          src={adminAvatar} 
-          alt="Photo profil" 
-          className="user-avatar-img-mini"
-        />
+        {currentUser.photoProfil ? (
+          <img src={currentUser.photoProfil} alt="Photo profil" className="user-avatar-img-mini" />
+        ) : (
+          <span className="user-avatar-initials">{initials}</span>
+        )}
       </div>
     </div>
   )}

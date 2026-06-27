@@ -66,6 +66,12 @@ export const nombreAdmin = async () => {
   return response.data;
 };
 
+/* Modifier les permissions d'un administrateur */
+export const modifierPermissionsAdmin = async (id, permissions) => {
+  const response = await api.patch(`/admin/admins/${id}/permissions`, { permissions });
+  return response.data;
+};
+
 /* Activer utilisateur */
 export const activerUtilisateur = async (id) => {
   const response = await api.patch(`/admin/activer-utilisateur/${id}`);
@@ -78,6 +84,12 @@ export const desactiverUtilisateur = async (id) => {
   return response.data;
 };
 
+/* Supprimer un utilisateur (RGPD) */
+export const supprimerUtilisateur = async (id) => {
+  const response = await api.delete(`/admin/utilisateur/${id}`);
+  return response.data;
+};
+
 /* ─── Contrats (endpoint admin unifié) ──────────────────────── */
 export const listeContrats = async () => {
   const response = await api.get('/admin/liste-contrats?limit=1000');
@@ -87,4 +99,21 @@ export const listeContrats = async () => {
 export const nombreContrats = async () => {
   const response = await api.get('/admin/nombre-contrats');
   return response.data;
+};
+
+/* ─── Statistiques globales du dashboard (endpoint agrégé) ──── */
+export const statistiques = async () => {
+  const response = await api.get('/admin/statistiques');
+  return response.data;
+};
+
+/* ─── Téléchargement / aperçu des PDF (flux binaire depuis R2) ─── */
+export const telechargerContratPdf = async (type, id) => {
+  const response = await api.get(`/admin/contrat-pdf/${type}/${id}`, { responseType: 'blob' });
+  return response.data; // Blob application/pdf
+};
+
+export const telechargerFacturePdf = async (id) => {
+  const response = await api.get(`/admin/facture-pdf/${id}`, { responseType: 'blob' });
+  return response.data; // Blob application/pdf
 };

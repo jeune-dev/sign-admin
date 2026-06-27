@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, FileText,
+import { Search, ChevronLeft, ChevronRight, FileText, Download,
          LayoutGrid, Briefcase, Handshake, Key, Banknote,
          PenLine, ShieldCheck, Lock, HardHat, Building2 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
-import { listeContrats } from '../../../service/admin/adminService';
+import { listeContrats, telechargerContratPdf } from '../../../service/admin/adminService';
+import { exportToCsv } from '../../../utils/exportCsv';
 
 import '../../../assets/css/factures.css';
 import '../../../assets/css/contrats.css';
@@ -72,20 +73,53 @@ export default function ContratsList() {
     currentPage * itemsPerPage
   );
 
-  const openPdf = (base64String) => {
-    if (!base64String) {
+  // Récupère le PDF (flux binaire depuis R2 via le backend) sous forme de Blob.
+  const recupererPdfBlob = (c) => telechargerContratPdf(c.typeCode, c.id);
+
+  // Aperçu du PDF dans un nouvel onglet.
+  const openPdf = async (c) => {
+    if (!c.contrat_pdf) {
       SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour ce contrat' });
       return;
     }
     try {
-      const bytes = Uint8Array.from(atob(base64String), (ch) => ch.charCodeAt(0));
-      const blob  = new Blob([bytes], { type: 'application/pdf' });
-      const url   = URL.createObjectURL(blob);
+      const blob = await recupererPdfBlob(c);
+      const url  = URL.createObjectURL(blob);
       window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch {
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: "Impossible d'ouvrir le PDF" });
     }
+  };
+
+  // Télécharge le PDF du contrat sous forme de fichier (et non simple aperçu).
+  const downloadPdf = async (c) => {
+    if (!c.contrat_pdf) {
+      SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour ce contrat' });
+      return;
+    }
+    try {
+      const blob = await recupererPdfBlob(c);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${(c.numero_contrat || 'contrat').replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de télécharger le PDF' });
+    }
+  };
+
+  const handleExport = () => {
+    exportToCsv('contrats', [
+      { header: 'N° Contrat', value: (c) => c.numero_contrat },
+      { header: 'Type', value: (c) => c.type },
+      { header: 'Statut', value: (c) => c.statut },
+      { header: 'Date', value: (c) => c.date ? new Date(c.date).toLocaleDateString('fr-FR') : '' },
+    ], filtered);
   };
 
   if (loading) return <p>Chargement...</p>;
@@ -105,6 +139,9 @@ export default function ContratsList() {
         {searchTerm && (
           <button className="search-clear" onClick={() => setSearchTerm('')}>×</button>
         )}
+        <button className="btn-export" onClick={handleExport} disabled={filtered.length === 0} title="Exporter en CSV">
+          <Download size={16} /> <span>Exporter CSV</span>
+        </button>
       </div>
 
       {/* ── Boxes de filtre par type ── */}
@@ -161,10 +198,17 @@ export default function ContratsList() {
                     <td className="actions">
                       <button
                         className="btn-view"
-                        onClick={() => openPdf(c.contrat_pdf)}
+                        onClick={() => openPdf(c)}
                         title="Voir le contrat PDF"
                       >
                         <FileText size={16} />
+                      </button>
+                      <button
+                        className="btn-view"
+                        onClick={() => downloadPdf(c)}
+                        title="Télécharger le PDF"
+                      >
+                        <Download size={16} />
                       </button>
                     </td>
                   </tr>

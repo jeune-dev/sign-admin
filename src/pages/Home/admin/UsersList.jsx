@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard } from 'lucide-react';
+import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import {
   listeUtilisateurs,
   activerUtilisateur,
-  desactiverUtilisateur
+  desactiverUtilisateur,
+  supprimerUtilisateur
 } from '../../../service/admin/adminService';
+import { exportToCsv } from '../../../utils/exportCsv';
 import '../../../assets/css/listeUser.css';
 
 export default function UsersList() {
@@ -87,6 +89,39 @@ export default function UsersList() {
     }
   };
 
+  // Supprimer (RGPD)
+  const handleDelete = async (user) => {
+    const result = await SwalCustom.fire({
+      title: `Supprimer ${user.prenom} ${user.nom} ?`,
+      text: "Cette action supprime définitivement le compte (RGPD).",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Supprimer',
+      cancelButtonText: 'Annuler',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await supprimerUtilisateur(user.id);
+      setUsersList(prev => prev.filter(u => u.id !== user.id));
+      SwalCustom.fire({ icon: 'success', title: 'Supprimé', text: 'Utilisateur supprimé', timer: 2200, timerProgressBar: true, showConfirmButton: false });
+    } catch (err) {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Suppression impossible' });
+    }
+  };
+
+  // Export CSV
+  const handleExport = () => {
+    exportToCsv('utilisateurs', [
+      { header: 'Prénom', value: (u) => u.prenom },
+      { header: 'Nom', value: (u) => u.nom },
+      { header: 'Email', value: (u) => u.email },
+      { header: 'Téléphone', value: (u) => u.telephone },
+      { header: 'Rôle', value: (u) => u.role },
+      { header: 'Statut', value: (u) => u.statut },
+      { header: 'Inscrit le', value: (u) => u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '' },
+    ], filteredUsers);
+  };
+
   // Pagination
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -120,6 +155,9 @@ export default function UsersList() {
         <div className="search-stats">
           {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''}
         </div>
+        <button className="btn-export" onClick={handleExport} disabled={filteredUsers.length === 0}>
+          <Download size={16} /> <span>Exporter CSV</span>
+        </button>
       </div>
 
       {/* Tableau */}
@@ -186,6 +224,10 @@ export default function UsersList() {
                       >
                         {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
                         <span>{isActif ? 'Désactiver' : 'Activer'}</span>
+                      </button>
+                      <button className="action-btn btn-delete" onClick={() => handleDelete(user)} title="Supprimer (RGPD)">
+                        <Trash2 size={16} />
+                        <span>Supprimer</span>
                       </button>
                     </td>
                   </tr>
