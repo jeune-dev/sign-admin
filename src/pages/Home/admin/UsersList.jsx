@@ -30,8 +30,10 @@ export default function UsersList() {
         }));
         setUsersList(formatted);
         setFilteredUsers(formatted);
-      } catch {
-        SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les utilisateurs' });
+      } catch (err) {
+        // On remonte la cause réelle (403 permissions, 500 serveur, démarrage à froid Render…)
+        const msg = err?.response?.data?.message || err?.message || 'Impossible de récupérer les utilisateurs';
+        SwalCustom.fire({ icon: 'error', title: 'Erreur', text: msg });
       } finally {
         setLoading(false);
       }

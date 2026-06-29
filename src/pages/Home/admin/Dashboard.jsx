@@ -76,7 +76,8 @@ export default function Dashboard() {
     setErreur(false);
     try {
       const res = await statistiques();
-      if (res?.stats) setStats({ ...EMPTY_STATS, ...res.stats });
+      // L'endpoint renvoie l'objet stats directement dans `data` (déjà déballé par le service)
+      if (res) setStats({ ...EMPTY_STATS, ...res });
     } catch (error) {
       console.error("Erreur lors de la récupération des statistiques :", error);
       setErreur(true);
