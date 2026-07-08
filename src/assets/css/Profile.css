@@ -1,75 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 /* ─── Page ─────────────────────────────────────────────────────────── */
 .profile-page {
   padding: 32px;
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ─── Carte principale ─────────────────────────────────────────────── */
-.profile-card {
+.profile-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  align-items: start;
+  gap: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SIDEBAR — carte d'identité
+   ═══════════════════════════════════════════════════════════════════ */
+.profile-sidebar {
   background: #ffffff;
-  border-radius: 28px;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04), 0 12px 32px rgba(15, 15, 15, 0.06);
-  border: 1px solid #eeeeef;
+  border: 1px solid #ececef;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03), 0 16px 40px rgba(15, 15, 15, 0.05);
+  position: sticky;
+  top: 24px;
 }
 
-.profile-cover {
-  height: 140px;
+.sidebar-cover {
+  height: 96px;
   background:
-    radial-gradient(circle at 15% 30%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
-    radial-gradient(circle at 85% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
-    linear-gradient(135deg, #050505 0%, #1c1c1c 55%, #050505 100%);
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.09) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.07) 0%, transparent 45%),
+    linear-gradient(135deg, #0a0a0a 0%, #26262b 60%, #050505 100%);
   position: relative;
 }
 
-.profile-header {
-  display: flex;
-  align-items: flex-end;
-  gap: 24px;
-  padding: 0 40px 28px;
-  margin-top: -56px;
+.sidebar-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
 
-.profile-avatar {
-  width: 112px;
-  height: 112px;
-  border-radius: 28px;
+.sidebar-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: -52px;
+}
+
+.sidebar-avatar {
+  width: 104px;
+  height: 104px;
+  border-radius: 26px;
   background: #ffffff;
   border: 5px solid #ffffff;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 38px;
+  font-size: 34px;
   font-weight: 800;
   color: #0a0a0a;
   overflow: hidden;
   flex-shrink: 0;
 }
 
-.profile-avatar img {
+.sidebar-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.profile-identity {
-  padding-bottom: 6px;
-  min-width: 0;
+.sidebar-identity {
+  text-align: center;
+  padding: 14px 24px 0;
 }
 
-.profile-identity h1 {
+.sidebar-identity h1 {
   margin: 0 0 10px;
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 800;
   color: #0f0f10;
   letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
-.profile-badges {
+.sidebar-badges {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -80,7 +104,7 @@
   gap: 6px;
   padding: 5px 12px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -111,21 +135,113 @@
   background: #ef4444;
 }
 
-/* ─── Infos ────────────────────────────────────────────────────────── */
-.profile-section-title {
-  padding: 4px 40px 14px;
-  font-size: 12.5px;
+.sidebar-divider {
+  height: 1px;
+  background: #f0f0f2;
+  margin: 22px 24px;
+}
+
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 24px 24px;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+  border: 1.5px solid transparent;
+  width: 100%;
+}
+
+.btn-action:active {
+  transform: scale(0.98);
+}
+
+.btn-edit-profile {
+  background: #0f0f10;
+  color: #ffffff;
+}
+
+.btn-edit-profile:hover {
+  background: #26262a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.btn-change-password {
+  background: #ffffff;
+  color: #b91c1c;
+  border-color: #f3d4d4;
+}
+
+.btn-change-password:hover {
+  background: #fef4f4;
+  border-color: #ecb8b8;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONTENU PRINCIPAL
+   ═══════════════════════════════════════════════════════════════════ */
+.profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.info-card {
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid #ececef;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.03), 0 12px 32px rgba(15, 15, 15, 0.04);
+  padding: 26px 28px 28px;
+}
+
+.info-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.info-card-header .icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #0f0f10;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-card-header h2 {
+  margin: 0;
+  font-size: 15.5px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: #0f0f10;
+}
+
+.info-card-header p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
   color: #9a9aa0;
 }
 
-.profile-info-grid {
+.info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
-  padding: 0 40px 32px;
 }
 
 .info-tile {
@@ -178,55 +294,71 @@
   word-break: break-word;
 }
 
-/* ─── Actions ──────────────────────────────────────────────────────── */
-.profile-actions {
-  display: flex;
-  gap: 14px;
-  padding: 24px 40px 36px;
-  border-top: 1px solid #f0f0f2;
+/* ─── Carte sécurité ───────────────────────────────────────────────── */
+.security-card {
+  border-color: #f6dcdc;
+  background: linear-gradient(180deg, #fffbfb 0%, #ffffff 55%);
 }
 
-.btn-action {
-  flex: 1;
+.security-card .info-card-header .icon-wrap {
+  background: #b91c1c;
+}
+
+.security-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid #f0dede;
+  border-radius: 16px;
+  flex-wrap: wrap;
+}
+
+.security-row-text {
+  min-width: 0;
+}
+
+.security-row-text p.title {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17171a;
+}
+
+.security-row-text p.desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: #8b8b92;
+  line-height: 1.5;
+}
+
+.btn-security {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 13px 20px;
-  border-radius: 14px;
-  font-size: 14.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
-  border: 1.5px solid transparent;
-}
-
-.btn-action:active {
-  transform: scale(0.98);
-}
-
-.btn-edit-profile {
-  background: #0f0f10;
-  color: #ffffff;
-}
-
-.btn-edit-profile:hover {
-  background: #26262a;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-}
-
-.btn-change-password {
+  gap: 8px;
+  padding: 10px 18px;
   background: #ffffff;
   color: #b91c1c;
-  border-color: #f3d4d4;
+  border: 1.5px solid #f3d4d4;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
-.btn-change-password:hover {
+.btn-security:hover {
   background: #fef4f4;
   border-color: #ecb8b8;
 }
 
-/* ─── Modales ──────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════
+   MODALES
+   ═══════════════════════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -317,6 +449,8 @@
   font-size: 14px;
   color: #0f0f10;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 }
 
 .form-group input:focus {
@@ -389,13 +523,73 @@
   margin-bottom: 18px;
 }
 
+/* ─── Avatar upload (modale édition) ──────────────────────────────── */
+.avatar-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.avatar-upload-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #f4f4f6;
+  border: 1.5px solid #e4e4e7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f0f10;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #f7f7f8;
+  border: 1.5px solid #e4e4e7;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3f3f46;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.avatar-upload-btn:hover {
+  background: #efeff1;
+}
+
+.avatar-upload-btn input {
+  display: none;
+}
+
 /* ─── Responsive ───────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+  .profile-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
   .profile-page { padding: 16px; }
-  .profile-header { flex-direction: column; align-items: flex-start; padding: 0 24px 24px; }
-  .profile-section-title { padding: 4px 24px 12px; }
-  .profile-info-grid { grid-template-columns: 1fr; padding: 0 24px 24px; }
-  .profile-actions { flex-direction: column; padding: 20px 24px 28px; }
-  .profile-avatar { width: 88px; height: 88px; font-size: 30px; }
-  .profile-identity h1 { font-size: 21px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .info-card { padding: 20px 18px 22px; }
+  .security-row { flex-direction: column; align-items: stretch; }
+  .btn-security { width: 100%; justify-content: center; }
 }

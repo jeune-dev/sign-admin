@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Shield, Edit, Key, Mail, Phone, MapPin,
-  IdCard, X, Lock, AlertCircle, CheckCircle2
+  IdCard, X, Lock, AlertCircle, CheckCircle2, Camera, User as UserIcon
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import { getMe, modifierProfil, changerMotDePasse } from '../../../service/account/accountService';
@@ -146,56 +146,89 @@ export default function Profile() {
 
   return (
     <div className="profile-page">
-      <div className="profile-card">
-        <div className="profile-cover" />
+      <div className="profile-layout">
 
-        <div className="profile-header">
-          <div className="profile-avatar">
-            {user.photoProfil ? (
-              <img src={user.photoProfil} alt="Photo de profil" onError={(e) => { e.target.style.display = 'none'; }} />
-            ) : (
-              <span>{getInitials()}</span>
-            )}
+        {/* ─── SIDEBAR — carte d'identité ─── */}
+        <aside className="profile-sidebar">
+          <div className="sidebar-cover" />
+          <div className="sidebar-avatar-wrap">
+            <div className="sidebar-avatar">
+              {user.photoProfil ? (
+                <img src={user.photoProfil} alt="Photo de profil" onError={(e) => { e.target.style.display = 'none'; }} />
+              ) : (
+                <span>{getInitials()}</span>
+              )}
+            </div>
           </div>
-          <div className="profile-identity">
+          <div className="sidebar-identity">
             <h1>{user.prenom} {user.nom}</h1>
-            <div className="profile-badges">
+            <div className="sidebar-badges">
               <span className="badge badge-role"><Shield size={13} /> {user.role || 'Administrateur'}</span>
               <span className={`badge badge-status ${isActif ? '' : 'is-inactive'}`}>
                 <span className="dot" /> {isActif ? 'Compte actif' : 'Compte inactif'}
               </span>
             </div>
           </div>
-        </div>
+          <div className="sidebar-divider" />
+          <div className="sidebar-actions">
+            <button className="btn-action btn-edit-profile" onClick={ouvrirEdition}>
+              <Edit size={17} /> Modifier le profil
+            </button>
+            <button className="btn-action btn-change-password" onClick={() => setPasswordModalOpen(true)}>
+              <Key size={17} /> Changer le mot de passe
+            </button>
+          </div>
+        </aside>
 
-        <div className="profile-section-title">Informations personnelles</div>
-        <div className="profile-info-grid">
-          <div className="info-tile">
-            <div className="info-icon"><Mail size={17} /></div>
-            <div className="info-text"><label>Email</label><p>{val(user.email)}</p></div>
-          </div>
-          <div className="info-tile">
-            <div className="info-icon"><Phone size={17} /></div>
-            <div className="info-text"><label>Téléphone</label><p>{val(user.telephone)}</p></div>
-          </div>
-          <div className="info-tile">
-            <div className="info-icon"><MapPin size={17} /></div>
-            <div className="info-text"><label>Adresse</label><p>{val(user.adresse)}</p></div>
-          </div>
-          <div className="info-tile">
-            <div className="info-icon"><IdCard size={17} /></div>
-            <div className="info-text"><label>N° carte d'identité</label><p>{val(user.carte_identite_national_num)}</p></div>
-          </div>
-        </div>
+        {/* ─── CONTENU PRINCIPAL ─── */}
+        <main className="profile-main">
+          <section className="info-card">
+            <div className="info-card-header">
+              <div className="icon-wrap"><UserIcon size={17} /></div>
+              <div>
+                <h2>Informations personnelles</h2>
+                <p>Les données associées à votre compte administrateur</p>
+              </div>
+            </div>
+            <div className="info-grid">
+              <div className="info-tile">
+                <div className="info-icon"><Mail size={17} /></div>
+                <div className="info-text"><label>Email</label><p>{val(user.email)}</p></div>
+              </div>
+              <div className="info-tile">
+                <div className="info-icon"><Phone size={17} /></div>
+                <div className="info-text"><label>Téléphone</label><p>{val(user.telephone)}</p></div>
+              </div>
+              <div className="info-tile">
+                <div className="info-icon"><MapPin size={17} /></div>
+                <div className="info-text"><label>Adresse</label><p>{val(user.adresse)}</p></div>
+              </div>
+              <div className="info-tile">
+                <div className="info-icon"><IdCard size={17} /></div>
+                <div className="info-text"><label>N° carte d'identité</label><p>{val(user.carte_identite_national_num)}</p></div>
+              </div>
+            </div>
+          </section>
 
-        <div className="profile-actions">
-          <button className="btn-action btn-edit-profile" onClick={ouvrirEdition}>
-            <Edit size={17} /> Modifier le profil
-          </button>
-          <button className="btn-action btn-change-password" onClick={() => setPasswordModalOpen(true)}>
-            <Key size={17} /> Changer le mot de passe
-          </button>
-        </div>
+          <section className="info-card security-card">
+            <div className="info-card-header">
+              <div className="icon-wrap"><Lock size={17} /></div>
+              <div>
+                <h2>Sécurité du compte</h2>
+                <p>Gérez l'accès et la protection de votre compte</p>
+              </div>
+            </div>
+            <div className="security-row">
+              <div className="security-row-text">
+                <p className="title">Mot de passe</p>
+                <p className="desc">Un changement de mot de passe entraîne une déconnexion immédiate de toutes vos sessions actives.</p>
+              </div>
+              <button className="btn-security" onClick={() => setPasswordModalOpen(true)}>
+                <Key size={15} /> Changer
+              </button>
+            </div>
+          </section>
+        </main>
       </div>
 
       {/* MODALE ÉDITION */}
@@ -208,6 +241,21 @@ export default function Profile() {
             </div>
             <form onSubmit={handleEditSubmit}>
               <div className="modal-body">
+                <div className="avatar-upload-row">
+                  <div className="avatar-upload-preview">
+                    {photoFile ? (
+                      <img src={URL.createObjectURL(photoFile)} alt="Aperçu" />
+                    ) : user.photoProfil ? (
+                      <img src={user.photoProfil} alt="Photo actuelle" />
+                    ) : (
+                      <span>{getInitials()}</span>
+                    )}
+                  </div>
+                  <label className="avatar-upload-btn">
+                    <Camera size={15} /> Changer la photo
+                    <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
                 <div className="form-group"><label>Prénom</label>
                   <input type="text" name="prenom" value={editForm.prenom} onChange={handleEditChange} required /></div>
                 <div className="form-group"><label>Nom</label>
@@ -220,8 +268,6 @@ export default function Profile() {
                   <input type="text" name="adresse" value={editForm.adresse} onChange={handleEditChange} /></div>
                 <div className="form-group"><label>N° Carte d'identité</label>
                   <input type="text" name="carte_identite_national_num" value={editForm.carte_identite_national_num} onChange={handleEditChange} /></div>
-                <div className="form-group"><label>Photo de profil</label>
-                  <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} /></div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-cancel" onClick={() => setEditModalOpen(false)} disabled={saving}>Annuler</button>
