@@ -59,3 +59,47 @@ export const validateLoginForm = (identifiant, password) => {
   else if (password.length < 6) errors.password = "Minimum 6 caractères";
   return errors;
 };
+
+/* -------------------- Mot de passe oublié (admin) -------------------- */
+
+/* Demande de lien de réinitialisation — le backend renvoie toujours le même
+ * message générique, que le compte existe ou non (anti-énumération). */
+export const forgotPasswordAdmin = async (email) => {
+  const response = await api.post('/admin/auth/forgot-password', { email });
+  return response.data?.message;
+};
+
+/* Réinitialisation effective à partir du token reçu par email */
+export const resetPasswordAdmin = async (token, newPassword, confirmPassword) => {
+  const response = await api.post('/admin/auth/reset-password', {
+    token,
+    newPassword,
+    confirmPassword
+  });
+  return response.data?.message;
+};
+
+/* Validation email pour le formulaire "mot de passe oublié" */
+export const validateForgotPasswordForm = (email) => {
+  const errors = {};
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email.trim()) errors.email = "L'adresse email est requise";
+  else if (!emailRegex.test(email)) errors.email = "Adresse email invalide";
+  return errors;
+};
+
+/* Validation du formulaire de réinitialisation — doit refléter côté client
+ * la politique backend (8+ car., maj, min, chiffre, caractère spécial). */
+export const validateResetPasswordForm = (newPassword, confirmPassword) => {
+  const errors = {};
+  const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~/]).{8,}$/;
+  if (!newPassword) errors.newPassword = "Le mot de passe est requis";
+  else if (!strongRegex.test(newPassword)) {
+    errors.newPassword = "8 caractères min., avec majuscule, minuscule, chiffre et caractère spécial";
+  }
+  if (!confirmPassword) errors.confirmPassword = "Veuillez confirmer le mot de passe";
+  else if (newPassword && confirmPassword !== newPassword) {
+    errors.confirmPassword = "Les mots de passe ne correspondent pas";
+  }
+  return errors;
+};

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import "../../assets/css/Login.css";
 import { login, validateLoginForm, handleApiError } from "../../service/auth/authService";
@@ -118,7 +118,7 @@ export default function Login() {
           </button>
 
           <div className="login-footer">
-            <a href="#" className="forgot-link">Mot de passe oublié ?</a>
+            <Link to="/sign/forgot-password" className="forgot-link">Mot de passe oublié ?</Link>
           </div>
         </form>
       </div>
