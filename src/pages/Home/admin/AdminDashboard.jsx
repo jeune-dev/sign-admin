@@ -51,7 +51,15 @@ function MenuItemWithTooltip({ item, isActive, onClick, sidebarOpen }) {
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  // Persisté en sessionStorage pour survivre à un rafraîchissement de page —
+  // sans ça, F5 ramenait toujours sur "Accueil" quel que soit l'onglet actif.
+  const [activeMenu, setActiveMenuState] = useState(
+    () => sessionStorage.getItem('adminActiveMenu') || 'dashboard'
+  );
+  const setActiveMenu = (menu) => {
+    sessionStorage.setItem('adminActiveMenu', menu);
+    setActiveMenuState(menu);
+  };
 
   // Utilisateur connecté — présence + rôle déjà garantis par <ProtectedRoute>.
   // Vient du contexte partagé : si Profile met à jour l'utilisateur (photo,
