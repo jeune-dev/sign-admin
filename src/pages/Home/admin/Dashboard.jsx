@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { statistiques } from "../../../service/admin/adminService";
+import { formatDate, formatNombre } from "../../../utils/format";
 import {
   Users, FileText, FileSignature, RefreshCw,
   TrendingUp, AlertCircle, FolderOpen
@@ -27,26 +28,13 @@ const EMPTY_STATS = {
   recents:      { contrats: [], factures: [], utilisateurs: [] },
 };
 
-/* ─── Helpers de formatage ─────────────────────────────────── */
-const formatNombre = (n) => {
-  if (!n) return "0";
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toString();
-};
-
-const formatDate = (d) => {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-};
-
 /* ─── Petit graphique en barres (réutilise .chart-bars du CSS) ─── */
 function BarChart({ data }) {
   const max = Math.max(...data.map((d) => d.valeur), 1);
   return (
     <div className="chart-bars">
-      {data.map((d, i) => (
-        <div key={i} className="chart-bar" style={{ height: `${Math.max((d.valeur / max) * 100, 4)}%` }}>
+      {data.map((d) => (
+        <div key={d.mois} className="chart-bar" style={{ height: `${Math.max((d.valeur / max) * 100, 4)}%` }}>
           <span className="chart-bar-value">{d.valeur}</span>
           <span className="chart-bar-label">{d.mois}</span>
         </div>
@@ -141,8 +129,8 @@ export default function Dashboard() {
 
       {/* ─── KPIs ───────────────────────────────────────────── */}
       <div className="kpis-grid">
-        {kpis.map((kpi, i) => (
-          <div className="kpi-card kpi-card--accent" key={i} style={{ "--accent": kpi.color }}>
+        {kpis.map((kpi) => (
+          <div className="kpi-card kpi-card--accent" key={kpi.label} style={{ "--accent": kpi.color }}>
             <div className="kpi-header">
               <div>
                 <div className="kpi-value">{kpi.value}</div>

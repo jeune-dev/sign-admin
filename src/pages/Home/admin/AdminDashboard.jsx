@@ -13,7 +13,8 @@ import {
   ScrollText
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
-import { getUser, logout as authLogout } from '../../../service/auth/authService';
+import { logout as authLogout } from '../../../service/auth/authService';
+import { useUser } from '../../../context/useUser';
 
 // Import des composants
 import Dashboard from './Dashboard';
@@ -27,13 +28,35 @@ import Profile from './Profile';
 import logoImage from '../../../assets/images/logo.jpeg';
 import '../../../assets/css/AdminDashboard.css';
 
+// Tooltip pour sidebar réduite — défini au niveau module (pas dans le render
+// d'AdminDashboard) pour que React ne remonte pas tout le sous-arbre du menu
+// à chaque re-render du parent.
+function MenuItemWithTooltip({ item, isActive, onClick, sidebarOpen }) {
+  return (
+    <div className={`menu-item-wrapper ${!sidebarOpen ? 'collapsed' : ''}`}>
+      <div
+        className={`menu-item ${isActive ? 'active' : ''}`}
+        onClick={() => onClick(item.id)}
+      >
+        <item.icon size={20} className="menu-icon" />
+        {sidebarOpen && <span className="menu-label">{item.label}</span>}
+      </div>
+      {!sidebarOpen && (
+        <div className="menu-tooltip">{item.label}</div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
 
   // Utilisateur connecté — présence + rôle déjà garantis par <ProtectedRoute>.
-  const currentUser = getUser();
+  // Vient du contexte partagé : si Profile met à jour l'utilisateur (photo,
+  // nom...), la sidebar se rafraîchit immédiatement, sans reload.
+  const { user: currentUser } = useUser();
 
   // Menu items — `perm` = permission requise (null = toujours visible)
   const allMenuItems = [
@@ -55,7 +78,9 @@ export default function AdminDashboard() {
     (item) => !item.perm || hasFullAccess || (Array.isArray(perms) && perms.includes(item.perm))
   );
 
-  // Détection mobile
+  // Détection mobile — le resize est débouncé (150ms) pour éviter de
+  // déclencher un re-render de tout le dashboard à chaque pixel glissé
+  // pendant un redimensionnement de fenêtre.
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -66,8 +91,18 @@ export default function AdminDashboard() {
       }
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    let timeoutId;
+    const debouncedCheckMobile = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkMobile, 150);
+    };
+
+    window.addEventListener('resize', debouncedCheckMobile);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', debouncedCheckMobile);
+    };
   }, []);
 
   // Message après connexion
@@ -121,22 +156,6 @@ export default function AdminDashboard() {
   // Initiales pour l'avatar du footer (si aucune photo de profil)
   const initials = `${currentUser.prenom?.[0] || ''}${currentUser.nom?.[0] || ''}`.toUpperCase() || 'AD';
 
-  // Tooltip pour sidebar réduite
-  const MenuItemWithTooltip = ({ item, isActive, onClick }) => (
-    <div className={`menu-item-wrapper ${!sidebarOpen ? 'collapsed' : ''}`}>
-      <div
-        className={`menu-item ${isActive ? 'active' : ''}`}
-        onClick={() => onClick(item.id)}
-      >
-        <item.icon size={20} className="menu-icon" />
-        {sidebarOpen && <span className="menu-label">{item.label}</span>}
-      </div>
-      {!sidebarOpen && (
-        <div className="menu-tooltip">{item.label}</div>
-      )}
-    </div>
-  );
-
   return (
     <div className="dashboard-container">
       {/* Overlay mobile */}
@@ -175,6 +194,7 @@ export default function AdminDashboard() {
               item={item}
               isActive={activeMenu === item.id}
               onClick={handleMenuClick}
+              sidebarOpen={sidebarOpen}
             />
           ))}
         </nav>
@@ -244,7 +264,7 @@ export default function AdminDashboard() {
           {activeMenu === 'factures' && <FacturesList />}
           {activeMenu === 'contrats' && <ContratsList />}
           {activeMenu === 'admins' && <AdminList />}
-          {activeMenu === 'profile' && <Profile currentUser={currentUser} />}
+          {activeMenu === 'profile' && <Profile />}
         </div>
       </main>
     </div>

@@ -5,10 +5,12 @@ import {
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import { getMe, modifierProfil, changerMotDePasse } from '../../../service/account/accountService';
-import { setUser } from '../../../service/api';
+import { useUser } from '../../../context/useUser';
 
-export default function Profile({ currentUser = {} }) {
-  const [user, setUserState] = useState(currentUser || {});
+export default function Profile() {
+  // Contexte partagé : toute mise à jour ici (photo, nom...) se reflète
+  // immédiatement dans la sidebar d'AdminDashboard, sans reload.
+  const { user, setUser } = useUser();
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,13 +31,15 @@ export default function Profile({ currentUser = {} }) {
     try {
       const data = await getMe();
       if (data) {
-        setUserState(data);
-        setUser(data); // met à jour le sessionStorage pour toute l'app
+        setUser(data); // met à jour le contexte + sessionStorage pour toute l'app
       }
-    } catch {
-      /* on garde currentUser passé en prop si l'API échoue */
+    } catch (err) {
+      // On garde l'utilisateur déjà en contexte si l'API échoue (fallback
+      // voulu), mais on logue quand même la cause réelle pour ne pas masquer
+      // un bug.
+      console.error('Erreur lors du chargement du profil :', err);
     }
-  }, []);
+  }, [setUser]);
 
   useEffect(() => { charger(); }, [charger]);
 
@@ -70,7 +74,6 @@ export default function Profile({ currentUser = {} }) {
       const res = await modifierProfil(fd);
       const updated = res?.utilisateur || res?.data?.utilisateur;
       if (updated) {
-        setUserState(updated);
         setUser(updated);
       }
       setEditModalOpen(false);

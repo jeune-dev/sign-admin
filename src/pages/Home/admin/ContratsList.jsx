@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, FileText, Download,
          LayoutGrid, Briefcase, Handshake, Key, Banknote,
          PenLine, ShieldCheck, Lock, HardHat, Building2 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
+import AccessDenied from '../../../components/AccessDenied';
+import { useServerList } from '../../../hooks/useServerList';
+import { formatDate } from '../../../utils/format';
+import { openPdfBlob, downloadPdfBlob } from '../../../utils/pdfBlob';
+import { fetchAllPages } from '../../../utils/fetchAllPages';
 import { listeContrats, telechargerContratPdf } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
 
@@ -36,93 +41,60 @@ function StatusBadge({ statut }) {
 }
 
 export default function ContratsList() {
-  const [contrats, setContrats]       = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [searchTerm, setSearchTerm]   = useState('');
-  const [typeFilter, setTypeFilter]   = useState('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [typeFilter, setTypeFilter] = useState('all');
 
-  useEffect(() => { fetchContrats(); }, []);
-
-  const fetchContrats = async () => {
-    try {
-      const res = await listeContrats();
-      setContrats(res.contrats || []);
-    } catch {
-      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les contrats' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { setCurrentPage(1); }, [searchTerm, typeFilter]);
-
-  const filtered = contrats.filter((c) => {
-    const s = searchTerm.toLowerCase().trim();
-    const matchType   = typeFilter === 'all' || c.typeCode === typeFilter;
-    const matchSearch = !s
-      || c.numero_contrat?.toLowerCase().includes(s)
-      || c.type?.toLowerCase().includes(s);
-    return matchType && matchSearch;
-  });
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated  = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Pagination + recherche + filtre de type gérés côté serveur — le backend
+  // (requirePermission('contrats')) est la seule source de vérité.
+  const {
+    items: paginated, loading, accessDenied,
+    page: currentPage, totalPages, total, nextPage, prevPage,
+    search: searchTerm, setSearch: setSearchTerm,
+  } = useServerList(
+    async ({ page, limit, search }) => {
+      const res = await listeContrats({ page, limit, search, type: typeFilter });
+      return { items: res.contrats || [], pagination: res.pagination };
+    },
+    { limit: 10, extraDeps: [typeFilter] }
   );
 
   // Récupère le PDF (flux binaire depuis R2 via le backend) sous forme de Blob.
   const recupererPdfBlob = (c) => telechargerContratPdf(c.typeCode, c.id);
 
   // Aperçu du PDF dans un nouvel onglet.
-  const openPdf = async (c) => {
+  const openPdf = (c) => {
     if (!c.contrat_pdf) {
       SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour ce contrat' });
       return;
     }
-    try {
-      const blob = await recupererPdfBlob(c);
-      const url  = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch {
-      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: "Impossible d'ouvrir le PDF" });
-    }
+    openPdfBlob(() => recupererPdfBlob(c));
   };
 
   // Télécharge le PDF du contrat sous forme de fichier (et non simple aperçu).
-  const downloadPdf = async (c) => {
+  const downloadPdf = (c) => {
     if (!c.contrat_pdf) {
       SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour ce contrat' });
       return;
     }
-    try {
-      const blob = await recupererPdfBlob(c);
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `${(c.numero_contrat || 'contrat').replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch {
-      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de télécharger le PDF' });
-    }
+    downloadPdfBlob(() => recupererPdfBlob(c), `${(c.numero_contrat || 'contrat').replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`);
   };
 
-  const handleExport = () => {
+  // Export CSV — récupère TOUTES les pages correspondant à la recherche et
+  // au filtre de type actifs (pas seulement la page affichée à l'écran).
+  const handleExport = async () => {
+    const all = await fetchAllPages(
+      (p) => listeContrats({ ...p, search: searchTerm, type: typeFilter }),
+      (res) => res.contrats || []
+    );
     exportToCsv('contrats', [
       { header: 'N° Contrat', value: (c) => c.numero_contrat },
       { header: 'Type', value: (c) => c.type },
       { header: 'Statut', value: (c) => c.statut },
-      { header: 'Date', value: (c) => c.date ? new Date(c.date).toLocaleDateString('fr-FR') : '' },
-    ], filtered);
+      { header: 'Date', value: (c) => formatDate(c.date) },
+    ], all);
   };
 
   if (loading) return <p>Chargement...</p>;
+  if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les contrats." />;
 
   return (
     <>
@@ -139,7 +111,7 @@ export default function ContratsList() {
         {searchTerm && (
           <button className="search-clear" onClick={() => setSearchTerm('')}>×</button>
         )}
-        <button className="btn-export" onClick={handleExport} disabled={filtered.length === 0} title="Exporter en CSV">
+        <button className="btn-export" onClick={handleExport} disabled={total === 0} title="Exporter en CSV">
           <Download size={16} /> <span>Exporter CSV</span>
         </button>
       </div>
@@ -168,7 +140,7 @@ export default function ContratsList() {
 
       {/* ── Tableau ── */}
       <div className="table-container">
-        {filtered.length === 0 ? (
+        {paginated.length === 0 ? (
           <p className="no-results">Aucun contrat trouvé.</p>
         ) : (
           <>
@@ -189,11 +161,7 @@ export default function ContratsList() {
                     <td>
                       <span className={`type-badge type-${c.typeCode}`}>{c.type}</span>
                     </td>
-                    <td>
-                      {c.date
-                        ? new Date(c.date).toLocaleDateString('fr-FR')
-                        : '-'}
-                    </td>
+                    <td>{formatDate(c.date)}</td>
                     <td><StatusBadge statut={c.statut} /></td>
                     <td className="actions">
                       <button
@@ -216,10 +184,10 @@ export default function ContratsList() {
               </tbody>
             </table>
 
-            {filtered.length > itemsPerPage && (
+            {totalPages > 1 && (
               <div className="pagination-simple">
                 <button
-                  onClick={() => setCurrentPage((p) => p - 1)}
+                  onClick={prevPage}
                   disabled={currentPage === 1}
                   className="pagination-btn pagination-prev"
                 >
@@ -229,7 +197,7 @@ export default function ContratsList() {
                   Page {currentPage} sur {totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                  onClick={nextPage}
                   disabled={currentPage === totalPages}
                   className="pagination-btn pagination-next"
                 >

@@ -1,6 +1,4 @@
-import api, { setUser, getUser, clearUser, setStoredToken } from '../api';
-
-export { getUser };
+import api, { setUser, clearUser, setStoredToken } from '../api';
 
 /* Validation du format identifiant */
 export const validateIdentifiant = (value) => {

@@ -1,94 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Eye, Search, ChevronLeft, ChevronRight, FileText, Download } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
+import AccessDenied from '../../../components/AccessDenied';
+import { useServerList } from '../../../hooks/useServerList';
+import { formatDate } from '../../../utils/format';
+import { openPdfBlob } from '../../../utils/pdfBlob';
+import { fetchAllPages } from '../../../utils/fetchAllPages';
 
 import { listeFactures, telechargerFacturePdf } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
 
-import '../../../assets/css/factures.css'; 
+import '../../../assets/css/factures.css';
 
 export default function FactureList() {
-  const [factures, setFactures] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  useEffect(() => {
-    fetchFactures();
-  }, []);
-
-  const fetchFactures = async () => {
-    try {
-      const response = await listeFactures();
-      const facturesData = response.factures || [];
-      setFactures(facturesData);
-    } catch {
-      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de récupérer les factures' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredFactures = factures.filter(fact => {
-    const search = searchTerm.toLowerCase().trim();
-    if (!search) return true;
-
-    return (
-      fact.numero_facture?.toLowerCase().includes(search) ||
-      fact.client?.nom?.toLowerCase().includes(search) ||
-      fact.client?.prenom?.toLowerCase().includes(search) ||
-      fact.professionnel?.nom?.toLowerCase().includes(search) ||
-      fact.professionnel?.prenom?.toLowerCase().includes(search)
-    );
-  });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  const totalPages = Math.ceil(filteredFactures.length / itemsPerPage);
-  const paginatedFactures = filteredFactures.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Pagination + recherche gérées côté serveur — le backend
+  // (requirePermission('factures')) est la seule source de vérité.
+  const {
+    items: paginatedFactures, loading, accessDenied,
+    page: currentPage, totalPages, total, nextPage, prevPage,
+    search: searchTerm, setSearch: setSearchTerm,
+  } = useServerList(
+    async ({ page, limit, search }) => {
+      const res = await listeFactures({ page, limit, search });
+      return { items: res.factures || [], pagination: res.pagination };
+    },
+    { limit: 10 }
   );
 
-  const nextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) setCurrentPage(prev => prev - 1);
-  };
-
-  const openPdf = async (fact) => {
+  const openPdf = (fact) => {
     if (!fact.document_pdf) {
       SwalCustom.fire({ icon: 'info', title: 'Information', text: 'Aucun PDF disponible pour cette facture' });
       return;
     }
-
-    try {
-      const blob = await telechargerFacturePdf(fact.id);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch {
-      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: "Impossible d'ouvrir le PDF" });
-    }
+    openPdfBlob(() => telechargerFacturePdf(fact.id));
   };
 
-  const handleExport = () => {
+  // Export CSV — récupère TOUTES les pages correspondant à la recherche
+  // active (pas seulement la page actuellement affichée à l'écran).
+  const handleExport = async () => {
+    const all = await fetchAllPages(
+      (p) => listeFactures({ ...p, search: searchTerm }),
+      (res) => res.factures || []
+    );
     exportToCsv('factures', [
       { header: 'N° Facture', value: (f) => f.numero_facture },
       { header: 'Client', value: (f) => f.client ? `${f.client.prenom || ''} ${f.client.nom || ''}`.trim() : '' },
       { header: 'Professionnel', value: (f) => f.professionnel ? `${f.professionnel.prenom || ''} ${f.professionnel.nom || ''}`.trim() : '' },
       { header: 'Statut', value: (f) => f.statut },
-      { header: "Date d'exécution", value: (f) => f.date_execution ? new Date(f.date_execution).toLocaleDateString('fr-FR') : '' },
-    ], filteredFactures);
+      { header: "Date d'exécution", value: (f) => formatDate(f.date_execution) },
+    ], all);
   };
 
   if (loading) return <p>Chargement...</p>;
+  if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les factures." />;
 
   return (
     <>
@@ -107,13 +71,13 @@ export default function FactureList() {
             ×
           </button>
         )}
-        <button className="btn-export" onClick={handleExport} disabled={filteredFactures.length === 0} title="Exporter en CSV">
+        <button className="btn-export" onClick={handleExport} disabled={total === 0} title="Exporter en CSV">
           <Download size={16} /> <span>Exporter CSV</span>
         </button>
       </div>
 
       <div className="table-container">
-        {filteredFactures.length === 0 ? (
+        {paginatedFactures.length === 0 ? (
           <p className="no-results">Aucune facture trouvée.</p>
         ) : (
           <>
@@ -131,11 +95,7 @@ export default function FactureList() {
                 {paginatedFactures.map((fact) => (
                   <tr key={fact.id}>
                     <td>{fact.numero_facture || '-'}</td>
-                    <td>
-                      {fact.date_execution
-                        ? new Date(fact.date_execution).toLocaleDateString('fr-FR')
-                        : '-'}
-                    </td>
+                    <td>{formatDate(fact.date_execution)}</td>
                     <td>
                       {fact.client
                         ? `${fact.client.prenom || ''} ${fact.client.nom || ''}`.trim() || '-'
@@ -161,7 +121,7 @@ export default function FactureList() {
             </table>
 
             {/* Pagination */}
-            {filteredFactures.length > itemsPerPage && (
+            {totalPages > 1 && (
               <div className="pagination-simple">
                 <button
                   onClick={prevPage}

@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { getStoredToken } from '../service/api';
-import { getUser } from '../service/auth/authService';
+import { useUser } from '../context/useUser';
 
 /**
  * Bloque l'accès à une route tant qu'un token + un utilisateur Admin actif
@@ -10,7 +10,7 @@ import { getUser } from '../service/auth/authService';
  */
 export default function ProtectedRoute({ children }) {
   const token = getStoredToken();
-  const user = getUser();
+  const { user } = useUser();
 
   if (!token || !user || user.role !== 'Admin') {
     return <Navigate to="/sign/login" replace />;

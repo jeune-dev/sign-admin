@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Check,
   X as XIcon,
@@ -19,6 +19,8 @@ import {
   Lock
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
+import AccessDenied from '../../../components/AccessDenied';
+import { useServerList } from '../../../hooks/useServerList';
 import {
   listerAdmins,
   activerUtilisateur,
@@ -41,14 +43,28 @@ const FORM_VIDE = {
   telephone: '', adresse: '', carte_identite_national_num: '',
 };
 
-export default function UsersList() {
-  const [usersList, setUsersList] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function AdminList() {
+  // Pagination + recherche gérées côté serveur — le backend
+  // (requirePermission('admins')) est la seule source de vérité : le menu
+  // peut être trafiqué côté client, mais la donnée réelle n'est jamais
+  // chargée ni affichée sans son feu vert.
+  const {
+    items: currentUsers, loading, accessDenied, reload,
+    page: currentPage, totalPages, total, nextPage, prevPage,
+    search: searchTerm, setSearch: setSearchTerm,
+  } = useServerList(
+    async ({ page, limit, search }) => {
+      const res = await listerAdmins({ page, limit, search });
+      const admins = (res.admins || []).map(user => ({
+        ...user,
+        statut: user.statut?.toLowerCase() || 'inactif'
+      }));
+      return { items: admins, pagination: res.pagination };
+    },
+    { limit: 10 }
+  );
+
   const [selectedUser, setSelectedUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10);
   const [imgErrors, setImgErrors] = useState({});
 
   // ── Création d'un administrateur ──
@@ -76,41 +92,14 @@ export default function UsersList() {
     if (!permsAdmin) return;
     setSavingPerms(true);
     try {
-      const res = await modifierPermissionsAdmin(permsAdmin.id, permsSelection);
-      const updated = res?.admin;
-      setUsersList(prev => prev.map(u => u.id === permsAdmin.id
-        ? { ...u, permissions: updated ? updated.permissions : (permsSelection.length ? permsSelection : null) }
-        : u));
+      await modifierPermissionsAdmin(permsAdmin.id, permsSelection);
+      await reload();
       setPermsAdmin(null);
       SwalCustom.fire({ icon: 'success', title: 'Permissions mises à jour', timer: 2000, timerProgressBar: true, showConfirmButton: false });
     } catch (err) {
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Mise à jour impossible' });
     } finally {
       setSavingPerms(false);
-    }
-  };
-
-  const chargerAdmins = async () => {
-    try {
-      const data = await listerAdmins();
-      const formatted = (data.admins || []).map(user => ({
-        ...user,
-        statut: user.statut?.toLowerCase() || 'inactif'
-      }));
-      setUsersList(formatted);
-      setFilteredUsers(formatted);
-    } catch (err) {
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
-      if (status === 401) {
-        SwalCustom.fire({ icon: 'warning', title: 'Session expirée', text: 'Veuillez vous reconnecter. (' + msg + ')' });
-      } else if (!err?.response) {
-        SwalCustom.fire({ icon: 'warning', title: 'Connexion impossible', text: 'Le serveur ne répond pas. Attendez 30s puis rechargez la page.' });
-      } else {
-        SwalCustom.fire({ icon: 'error', title: 'Erreur ' + (status || ''), text: msg });
-      }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -157,7 +146,7 @@ export default function UsersList() {
       SwalCustom.fire({ icon: 'success', title: 'Administrateur créé', text: `${form.prenom} ${form.nom} a été ajouté avec succès.`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
       setShowCreate(false);
       resetCreateForm();
-      await chargerAdmins();
+      await reload();
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Impossible de créer l'administrateur";
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: msg });
@@ -165,54 +154,6 @@ export default function UsersList() {
       setSubmitting(false);
     }
   };
-
-  // Charger utilisateurs
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await listerAdmins();
-        const formatted = (data.admins || []).map(user => ({
-          ...user,
-          statut: user.statut?.toLowerCase() || 'inactif'
-        }));
-        setUsersList(formatted);
-        setFilteredUsers(formatted);
-      } catch (err) {
-        const status = err?.response?.status;
-        const msg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
-        if (status === 401) {
-          SwalCustom.fire({ icon: 'warning', title: 'Session expirée', text: 'Veuillez vous reconnecter. (' + msg + ')' });
-        } else if (!err?.response) {
-          SwalCustom.fire({ icon: 'warning', title: 'Connexion impossible', text: 'Le serveur ne répond pas. Attendez 30s puis rechargez la page.' });
-        } else {
-          SwalCustom.fire({ icon: 'error', title: 'Erreur ' + (status || ''), text: msg });
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  // Filtrer
-  useEffect(() => {
-    if (usersList.length > 0) {
-      const filtered = usersList.filter(user => {
-        const searchLower = searchTerm.toLowerCase().trim();
-        if (searchLower === '') return true;
-        const nomMatch = (user.nom?.toLowerCase() || '').includes(searchLower);
-        const prenomMatch = (user.prenom?.toLowerCase() || '').includes(searchLower);
-        const emailMatch = (user.email?.toLowerCase() || '').includes(searchLower);
-        const roleMatch = (user.role?.toLowerCase() || '').includes(searchLower);
-        const telephone = user.telephone?.replace(/\s+/g, '') || '';
-        const searchDigits = searchTerm.replace(/\s+/g, '');
-        const telephoneMatch = telephone.startsWith(searchDigits);
-        return nomMatch || prenomMatch || emailMatch || roleMatch || telephoneMatch;
-      });
-      setFilteredUsers(filtered);
-      setCurrentPage(1);
-    }
-  }, [searchTerm, usersList]);
 
   // Activer/Désactiver
   const handleToggleStatus = async (user) => {
@@ -233,13 +174,10 @@ export default function UsersList() {
       if (isActif) await desactiverUtilisateur(user.id);
       else await activerUtilisateur(user.id);
 
-      setUsersList(prev =>
-        prev.map(u =>
-          u.id === user.id ? { ...u, statut: isActif ? 'inactif' : 'actif' } : u
-        )
-      );
+      await reload();
       SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${action}é avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
-    } catch {
+    } catch (err) {
+      console.error('Erreur lors du changement de statut :', err);
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
     }
   };
@@ -249,13 +187,8 @@ export default function UsersList() {
     return `${prenom?.charAt(0) || ''}${nom?.charAt(0) || ''}`.toUpperCase();
   };
 
-  // Pagination
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-
   if (loading) return <div className="loading-spinner">Chargement des utilisateurs...</div>;
+  if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les administrateurs." />;
 
   return (
     <div className="userslist-container">
@@ -277,7 +210,7 @@ export default function UsersList() {
           )}
         </div>
         <div className="search-stats">
-          {filteredUsers.length} administrateur{filteredUsers.length > 1 ? 's' : ''}
+          {total} administrateur{total > 1 ? 's' : ''}
         </div>
         <button className="btn-add-admin" onClick={() => { resetCreateForm(); setShowCreate(true); }}>
           <Plus size={18} />
@@ -286,7 +219,7 @@ export default function UsersList() {
       </div>
 
       {/* Tableau */}
-      {filteredUsers.length === 0 ? (
+      {currentUsers.length === 0 ? (
         <div className="no-results">
           <Users size={48} />
           <p>Aucun utilisateur trouvé</p>
@@ -376,10 +309,10 @@ export default function UsersList() {
           </div>
 
           {/* Pagination */}
-          {filteredUsers.length > usersPerPage && (
+          {totalPages > 1 && (
             <div className="pagination">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={prevPage}
                 disabled={currentPage === 1}
                 className="pagination-btn"
               >
@@ -389,7 +322,7 @@ export default function UsersList() {
                 Page {currentPage} sur {totalPages}
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={nextPage}
                 disabled={currentPage === totalPages}
                 className="pagination-btn"
               >

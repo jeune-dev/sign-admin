@@ -46,9 +46,11 @@ export const nombreUtilisateur = async () => {
   return unwrap(response);
 };
 
-/* Liste des factures */
-export const listeFactures = async () => {
-  const response = await api.get('/admin/liste-factures');
+/* Liste des factures (pagination + recherche côté serveur) */
+export const listeFactures = async ({ page = 1, limit = 20, search = '' } = {}) => {
+  const response = await api.get('/admin/liste-factures', {
+    params: { page, limit, search: search?.trim() || undefined },
+  });
   return unwrap(response);
 };
 
@@ -58,15 +60,19 @@ export const nombreFacture = async () => {
   return unwrap(response);
 };
 
-/* Liste des utilisateurs */
-export const listeUtilisateurs = async () => {
-  const response = await api.get('/admin/liste-utilisateur');
+/* Liste des utilisateurs (pagination + recherche côté serveur) */
+export const listeUtilisateurs = async ({ page = 1, limit = 20, search = '' } = {}) => {
+  const response = await api.get('/admin/liste-utilisateur', {
+    params: { page, limit, search: search?.trim() || undefined },
+  });
   return unwrap(response);
 };
 
-/* Liste des administrateurs */
-export const listerAdmins = async () => {
-  const response = await api.get('/admin/liste-admins');
+/* Liste des administrateurs (pagination + recherche côté serveur) */
+export const listerAdmins = async ({ page = 1, limit = 20, search = '' } = {}) => {
+  const response = await api.get('/admin/liste-admins', {
+    params: { page, limit, search: search?.trim() || undefined },
+  });
   return unwrap(response);
 };
 
@@ -106,9 +112,16 @@ export const supprimerUtilisateur = async (id) => {
   return unwrap(response);
 };
 
-/* ─── Contrats (endpoint admin unifié) ──────────────────────── */
-export const listeContrats = async () => {
-  const response = await api.get('/admin/liste-contrats?limit=1000');
+/* ─── Contrats (endpoint admin unifié, pagination + recherche + type côté serveur) ─── */
+export const listeContrats = async ({ page = 1, limit = 20, search = '', type = '' } = {}) => {
+  const response = await api.get('/admin/liste-contrats', {
+    params: {
+      page,
+      limit,
+      search: search?.trim() || undefined,
+      type: type && type !== 'all' ? type : undefined,
+    },
+  });
   return unwrap(response);
 };
 

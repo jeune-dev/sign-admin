@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
+import AccessDenied from '../../../components/AccessDenied';
+import { useServerList } from '../../../hooks/useServerList';
+import { formatDate } from '../../../utils/format';
+import { fetchAllPages } from '../../../utils/fetchAllPages';
 import {
   listeUtilisateurs,
   activerUtilisateur,
@@ -10,56 +14,29 @@ import {
 import { exportToCsv } from '../../../utils/exportCsv';
 import '../../../assets/css/listeUser.css';
 
+const formatUserRow = (user) => ({
+  ...user,
+  statut: user.statut?.toLowerCase() || 'inactif'
+});
+
 export default function UsersList() {
-  const [usersList, setUsersList] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Pagination + recherche gérées côté serveur — le backend
+  // (requirePermission('users')) est la seule source de vérité : le menu
+  // peut être trafiqué côté client, mais la donnée réelle n'est jamais
+  // chargée ni affichée sans son feu vert.
+  const {
+    items: currentUsers, loading, accessDenied, reload,
+    page: currentPage, totalPages, total, nextPage, prevPage,
+    search: searchTerm, setSearch: setSearchTerm,
+  } = useServerList(
+    async ({ page, limit, search }) => {
+      const res = await listeUtilisateurs({ page, limit, search });
+      return { items: (res.utilisateurs || []).map(formatUserRow), pagination: res.pagination };
+    },
+    { limit: 10 }
+  );
+
   const [selectedUser, setSelectedUser] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(10);
-
-  // Charger utilisateurs
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await listeUtilisateurs();
-        const formatted = (data.utilisateurs || []).map(user => ({
-          ...user,
-          statut: user.statut?.toLowerCase() || 'inactif'
-        }));
-        setUsersList(formatted);
-        setFilteredUsers(formatted);
-      } catch (err) {
-        // On remonte la cause réelle (403 permissions, 500 serveur, démarrage à froid Render…)
-        const msg = err?.response?.data?.message || err?.message || 'Impossible de récupérer les utilisateurs';
-        SwalCustom.fire({ icon: 'error', title: 'Erreur', text: msg });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  // Filtrer
-  useEffect(() => {
-    if (usersList.length > 0) {
-      const filtered = usersList.filter(user => {
-        const searchLower = searchTerm.toLowerCase().trim();
-        if (searchLower === '') return true;
-        const nomMatch = (user.nom?.toLowerCase() || '').includes(searchLower);
-        const prenomMatch = (user.prenom?.toLowerCase() || '').includes(searchLower);
-        const emailMatch = (user.email?.toLowerCase() || '').includes(searchLower);
-        const roleMatch = (user.role?.toLowerCase() || '').includes(searchLower);
-        const telephone = user.telephone?.replace(/\s+/g, '') || '';
-        const searchDigits = searchTerm.replace(/\s+/g, '');
-        const telephoneMatch = telephone.startsWith(searchDigits);
-        return nomMatch || prenomMatch || emailMatch || roleMatch || telephoneMatch;
-      });
-      setFilteredUsers(filtered);
-      setCurrentPage(1);
-    }
-  }, [searchTerm, usersList]);
 
   // Activer/Désactiver
   const handleToggleStatus = async (user) => {
@@ -80,13 +57,12 @@ export default function UsersList() {
       if (isActif) await desactiverUtilisateur(user.id);
       else await activerUtilisateur(user.id);
 
-      setUsersList(prev =>
-        prev.map(u =>
-          u.id === user.id ? { ...u, statut: isActif ? 'inactif' : 'actif' } : u
-        )
-      );
+      // Recharge depuis le serveur (source de vérité) plutôt qu'une mutation
+      // locale optimiste, pour rester cohérent avec la pagination serveur.
+      await reload();
       SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${action}é avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
-    } catch {
+    } catch (err) {
+      console.error('Erreur lors du changement de statut :', err);
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
     }
   };
@@ -104,15 +80,20 @@ export default function UsersList() {
     if (!result.isConfirmed) return;
     try {
       await supprimerUtilisateur(user.id);
-      setUsersList(prev => prev.filter(u => u.id !== user.id));
+      await reload();
       SwalCustom.fire({ icon: 'success', title: 'Supprimé', text: 'Utilisateur supprimé', timer: 2200, timerProgressBar: true, showConfirmButton: false });
     } catch (err) {
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Suppression impossible' });
     }
   };
 
-  // Export CSV
-  const handleExport = () => {
+  // Export CSV — récupère TOUTES les pages correspondant à la recherche
+  // active (pas seulement la page actuellement affichée à l'écran).
+  const handleExport = async () => {
+    const all = await fetchAllPages(
+      (p) => listeUtilisateurs({ ...p, search: searchTerm }),
+      (res) => (res.utilisateurs || []).map(formatUserRow)
+    );
     exportToCsv('utilisateurs', [
       { header: 'Prénom', value: (u) => u.prenom },
       { header: 'Nom', value: (u) => u.nom },
@@ -120,20 +101,12 @@ export default function UsersList() {
       { header: 'Téléphone', value: (u) => u.telephone },
       { header: 'Rôle', value: (u) => u.role },
       { header: 'Statut', value: (u) => u.statut },
-      { header: 'Inscrit le', value: (u) => u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '' },
-    ], filteredUsers);
+      { header: 'Inscrit le', value: (u) => formatDate(u.createdAt) },
+    ], all);
   };
 
-  // Pagination
-  const indexOfLastUser = currentPage * usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-
-  const prevPage = () => setCurrentPage(p => Math.max(p - 1, 1));
-  const nextPage = () => setCurrentPage(p => Math.min(p + 1, totalPages));
-
   if (loading) return <div className="loading-spinner">Chargement des utilisateurs...</div>;
+  if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les utilisateurs." />;
 
   return (
     <div className="userslist-container">
@@ -155,15 +128,15 @@ export default function UsersList() {
           )}
         </div>
         <div className="search-stats">
-          {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''}
+          {total} utilisateur{total > 1 ? 's' : ''}
         </div>
-        <button className="btn-export" onClick={handleExport} disabled={filteredUsers.length === 0}>
+        <button className="btn-export" onClick={handleExport} disabled={total === 0}>
           <Download size={16} /> <span>Exporter CSV</span>
         </button>
       </div>
 
       {/* Tableau */}
-      {filteredUsers.length === 0 ? (
+      {currentUsers.length === 0 ? (
         <div className="no-results">
           <Users size={48} />
           <p>Aucun utilisateur trouvé</p>
@@ -241,7 +214,7 @@ export default function UsersList() {
       )}
 
       {/* Pagination */}
-      {filteredUsers.length > usersPerPage && (
+      {totalPages > 1 && (
         <div className="pagination">
           <button onClick={prevPage} disabled={currentPage === 1} className="pagination-btn">
             <ChevronLeft size={18} /> Précédent

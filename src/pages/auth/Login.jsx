@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import "../../assets/css/Login.css";
 import { login, validateLoginForm, handleApiError } from "../../service/auth/authService";
+import { useUser } from "../../context/useUser";
 import { ToastContainer, toast } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { setUser } = useUser();
   const [formData, setFormData] = useState({ identifiant: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -36,6 +38,10 @@ export default function Login() {
     try {
       const utilisateur = await login(formData.identifiant, formData.password);
       if (utilisateur.role === "Admin") {
+        // Synchronise le contexte partagé — sans ça, <ProtectedRoute> lirait
+        // encore l'état "non connecté" figé au montage de l'app et
+        // redirigerait aussitôt vers le login malgré la connexion réussie.
+        setUser(utilisateur);
         toast.success("Connexion réussie !", { autoClose: 2000 });
         sessionStorage.setItem('adminJustLoggedIn', 'true');
         navigate("/sign/admin-dashboard");
