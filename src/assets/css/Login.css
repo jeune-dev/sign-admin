@@ -105,18 +105,24 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-icon {
   position: absolute;
-  left: 13px;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
   color: #a1a1aa;
   pointer-events: none;
+  z-index: 1;
 }
 
 .login-card input {
   width: 100%;
-  padding: 12px 14px 12px 40px;
+  padding: 12px 14px 12px 46px;
   border: 1.5px solid #e4e4e7;
   border-radius: 10px;
   font-size: 14px;
