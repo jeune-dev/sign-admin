@@ -1,4 +1,6 @@
-import api, { setUser, clearUser, setStoredToken } from '../api';
+import api, { setUser, getUser, clearUser, setStoredToken } from '../api';
+
+export { getUser };
 
 /* Validation du format identifiant */
 export const validateIdentifiant = (value) => {
@@ -58,10 +60,4 @@ export const validateLoginForm = (identifiant, password) => {
   if (!password) errors.password = "Le mot de passe est requis";
   else if (password.length < 6) errors.password = "Minimum 6 caractères";
   return errors;
-};
-
-/* Récupérer l'utilisateur connecté (info affichage) */
-export const getUser = () => {
-  const user = localStorage.getItem('utilisateur');
-  return user ? JSON.parse(user) : null;
 };

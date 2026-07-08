@@ -30,7 +30,7 @@ export default function Profile({ currentUser = {} }) {
       const data = await getMe();
       if (data) {
         setUserState(data);
-        setUser(data); // met à jour le localStorage pour toute l'app
+        setUser(data); // met à jour le sessionStorage pour toute l'app
       }
     } catch {
       /* on garde currentUser passé en prop si l'API échoue */

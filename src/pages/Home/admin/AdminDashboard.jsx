@@ -32,23 +32,8 @@ export default function AdminDashboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeMenu, setActiveMenu] = useState('dashboard');
 
-  // Utilisateur connecté
-  const [currentUser] = useState(() => {
-    const user = getUser();
-    if (!user) {
-      window.location.href = '/sign/login';
-      return null;
-    }
-    return user;
-  });
-
-  // Données Dashboard (temporaire)
-  const [dashboardData] = useState({
-    totalUsers: 12547,
-    totalFactures: 880,
-    totalInvoices: 45321,
-    usersList: []
-  });
+  // Utilisateur connecté — présence + rôle déjà garantis par <ProtectedRoute>.
+  const currentUser = getUser();
 
   // Menu items — `perm` = permission requise (null = toujours visible)
   const allMenuItems = [
@@ -61,12 +46,13 @@ export default function AdminDashboard() {
     { id: 'logout', label: 'Déconnexion', icon: LogOut, perm: null }
   ];
 
-  // Filtrage selon les permissions de l'admin connecté.
-  // permissions null/vide = super-admin → accès complet.
+  // Filtrage selon les permissions de l'admin connecté — modèle STRICT,
+  // identique à requirePermission() côté backend (permission.middleware.js) :
+  // permissions null/vide = AUCUN accès implicite, seul ['all'] donne accès total.
   const perms = currentUser?.permissions;
-  const hasFullAccess = !Array.isArray(perms) || perms.length === 0;
+  const hasFullAccess = Array.isArray(perms) && perms.includes('all');
   const menuItems = allMenuItems.filter(
-    (item) => !item.perm || hasFullAccess || perms.includes(item.perm)
+    (item) => !item.perm || hasFullAccess || (Array.isArray(perms) && perms.includes(item.perm))
   );
 
   // Détection mobile
@@ -253,7 +239,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="content-area">
-          {activeMenu === 'dashboard' && <Dashboard dashboardData={dashboardData} />}
+          {activeMenu === 'dashboard' && <Dashboard />}
           {activeMenu === 'users' && <UsersList />}
           {activeMenu === 'factures' && <FacturesList />}
           {activeMenu === 'contrats' && <ContratsList />}

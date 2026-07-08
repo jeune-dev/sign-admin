@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -8,13 +9,17 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// ---------- Token en sessionStorage ----------
+// ---------- Token + utilisateur en sessionStorage ----------
+// Les deux partagent le même espace de stockage (durée de vie identique :
+// effacés à la fermeture de l'onglet), pour éviter qu'un token expiré/absent
+// coexiste avec un objet utilisateur périmé venant d'un onglet précédent.
 const TOKEN_KEY = '_sign_at';
 const TOKEN_EXP_KEY = '_sign_exp';
+const USER_KEY = 'utilisateur';
 
 const decodeToken = (token) => {
   try {
-    return JSON.parse(atob(token.split('.')[1]));
+    return jwtDecode(token);
   } catch {
     return null;
   }
@@ -111,15 +116,17 @@ api.interceptors.response.use(
 
 // ---------- Helpers utilisateur ----------
 export const setUser = (user) => {
-  localStorage.setItem('utilisateur', JSON.stringify(user));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
+export const getUser = () => {
+  const user = sessionStorage.getItem(USER_KEY);
+  return user ? JSON.parse(user) : null;
 };
 
 export const clearUser = () => {
-  localStorage.removeItem('utilisateur');
+  sessionStorage.removeItem(USER_KEY);
   clearStoredToken();
 };
-
-export const setToken = () => {};
-export const clearAuth = () => { clearUser(); };
 
 export default api;
