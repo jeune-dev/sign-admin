@@ -72,7 +72,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
           <div className="form-group">
             <label>Identifiant</label>
-            <div className="input-wrapper">
+            <div className={`input-wrapper ${errors.identifiant ? "error" : ""}`}>
               <Mail className="input-icon" size={16} />
               <input
                 type="text"
@@ -80,7 +80,6 @@ export default function Login() {
                 placeholder="Entrez votre identifiant"
                 value={formData.identifiant}
                 onChange={handleChange}
-                className={errors.identifiant ? "error" : ""}
                 autoComplete="off"
                 readOnly
                 onFocus={(e) => e.target.removeAttribute('readonly')}
@@ -91,7 +90,7 @@ export default function Login() {
 
           <div className="form-group">
             <label>Mot de passe</label>
-            <div className="input-wrapper">
+            <div className={`input-wrapper ${errors.password ? "error" : ""}`}>
               <Lock className="input-icon" size={16} />
               <input
                 type={showPassword ? "text" : "password"}
@@ -99,7 +98,6 @@ export default function Login() {
                 placeholder="Entrez votre mot de passe"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? "error" : ""}
                 autoComplete="new-password"
                 readOnly
                 onFocus={(e) => e.target.removeAttribute('readonly')}

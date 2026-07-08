@@ -101,53 +101,66 @@
   text-transform: uppercase;
 }
 
+/*
+ * L'icône et le champ texte sont deux éléments flex côte à côte (pas un
+ * positionnement absolu par-dessus le texte) : ils ne peuvent donc jamais
+ * se chevaucher, quel que soit le padding, la police ou la largeur de
+ * l'input. C'est le conteneur .input-wrapper qui porte le style visuel
+ * (fond, bordure, focus) — le <input> à l'intérieur est transparent et
+ * sans bordure propre.
+ */
 .input-wrapper {
-  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-}
-
-.input-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: #a1a1aa;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.login-card input {
-  width: 100%;
-  padding: 12px 14px 12px 46px;
+  gap: 10px;
+  padding: 0 14px;
   border: 1.5px solid #e4e4e7;
   border-radius: 10px;
-  font-size: 14px;
-  color: #18181b;
   background: #fafafa;
-  font-family: 'Inter', sans-serif;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.login-card input::placeholder {
-  color: #c4c4c8;
-  font-weight: 400;
-}
-
-.login-card input:focus {
-  outline: none;
+.input-wrapper:focus-within {
   background: #fff;
   border-color: #18181b;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.07);
 }
 
-.login-card input.error {
+.input-wrapper.error {
   border-color: #ef4444;
   background: #fff8f8;
+}
+
+.input-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: #a1a1aa;
+  pointer-events: none;
+}
+
+.login-card input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: #18181b;
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+.login-card input:focus {
+  outline: none;
+}
+
+.login-card input::placeholder {
+  color: #c4c4c8;
+  font-weight: 400;
 }
 
 .error-text {
@@ -159,8 +172,7 @@
 }
 
 .password-toggle {
-  position: absolute;
-  right: 12px;
+  flex: 0 0 auto;
   background: none;
   border: none;
   cursor: pointer;
