@@ -156,6 +156,7 @@ export default function UsersList() {
             <tbody>
               {currentUsers.map(user => {
                 const isActif = user.statut === 'actif';
+                const isPending = user.statut === 'en_attente_validation';
                 return (
                   <tr key={user.id}>
                     <td>
@@ -182,9 +183,9 @@ export default function UsersList() {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge ${isActif ? 'status-active' : 'status-inactive'}`}>
-                        {isActif ? <Check size={12} /> : <XIcon size={12} />}
-                        {isActif ? 'Actif' : 'Inactif'}
+                      <span className={`status-badge ${isActif ? 'status-active' : isPending ? 'status-pending' : 'status-inactive'}`}>
+                        {isActif ? <Check size={12} /> : isPending ? <IdCard size={12} /> : <XIcon size={12} />}
+                        {isActif ? 'Actif' : isPending ? 'En attente de validation' : 'Inactif'}
                       </span>
                     </td>
                     <td className="actions-cell">
@@ -195,10 +196,10 @@ export default function UsersList() {
                       <button
                         className={`action-btn ${isActif ? 'btn-disable' : 'btn-enable'}`}
                         onClick={() => handleToggleStatus(user)}
-                        title={isActif ? 'Désactiver' : 'Activer'}
+                        title={isActif ? 'Désactiver' : isPending ? 'Valider le document' : 'Activer'}
                       >
                         {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
-                        <span>{isActif ? 'Désactiver' : 'Activer'}</span>
+                        <span>{isActif ? 'Désactiver' : isPending ? 'Valider' : 'Activer'}</span>
                       </button>
                       <button className="action-btn btn-delete" onClick={() => handleDelete(user)} title="Supprimer (RGPD)">
                         <Trash2 size={16} />
@@ -248,8 +249,14 @@ export default function UsersList() {
                 )}
               </div>
               <div className="modal-status">
-                <span className={`status-dot ${selectedUser.statut === 'actif' ? 'active' : 'inactive'}`}></span>
-                {selectedUser.statut === 'actif' ? 'Actif' : 'Inactif'}
+                <span className={`status-dot ${
+                  selectedUser.statut === 'actif' ? 'active'
+                    : selectedUser.statut === 'en_attente_validation' ? 'pending'
+                    : 'inactive'
+                }`}></span>
+                {selectedUser.statut === 'actif' ? 'Actif'
+                  : selectedUser.statut === 'en_attente_validation' ? 'En attente de validation'
+                  : 'Inactif'}
               </div>
             </div>
 
@@ -283,11 +290,26 @@ export default function UsersList() {
               <div className="modal-info-item">
                 <IdCard size={18} />
                 <div>
-                  <label>CNI / NINA</label>
+                  <label>
+                    {{
+                      carte_identite: "N° carte d'identité",
+                      permis: 'N° permis de conduire',
+                      passeport: 'N° passeport',
+                    }[selectedUser.type_document_identite] || 'CNI / NINA'}
+                  </label>
                   <p>{selectedUser.carte_identite_national_num || '-'}</p>
                 </div>
               </div>
             </div>
+
+            {selectedUser.document_identite_url && (
+              <div className="modal-document-preview">
+                <label>Photo du document</label>
+                <a href={selectedUser.document_identite_url} target="_blank" rel="noopener noreferrer">
+                  <img src={selectedUser.document_identite_url} alt="Document d'identité" />
+                </a>
+              </div>
+            )}
 
             <div className="modal-actions">
               <button className="modal-btn modal-btn-secondary" onClick={() => setSelectedUser(null)}>
@@ -300,7 +322,9 @@ export default function UsersList() {
                   handleToggleStatus(selectedUser);
                 }}
               >
-                {selectedUser.statut === 'actif' ? 'Désactiver' : 'Activer'}
+                {selectedUser.statut === 'actif' ? 'Désactiver'
+                  : selectedUser.statut === 'en_attente_validation' ? 'Valider le document'
+                  : 'Activer'}
               </button>
             </div>
           </div>

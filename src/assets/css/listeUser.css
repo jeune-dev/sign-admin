@@ -256,6 +256,12 @@
   border-color: #fecaca;
 }
 
+.status-pending {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
 /* Actions cell */
 .actions-header {
   text-align: center;
@@ -508,6 +514,37 @@
 .status-dot.inactive {
   background: var(--danger);
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-dot.pending {
+  background: #d97706;
+  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
+}
+
+.modal-document-preview {
+  margin: 0 24px 20px;
+}
+
+.modal-document-preview label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 8px;
+}
+
+.modal-document-preview img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1.5px solid #eee;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.modal-document-preview img:hover {
+  opacity: 0.85;
 }
 
 .modal-name {
