@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { statistiques } from "../../../service/admin/adminService";
 import { formatDate, formatNombre } from "../../../utils/format";
 import {
@@ -26,6 +26,7 @@ const EMPTY_STATS = {
   factures:     { total: 0, nouveauxParMois: [] },
   documents:    { total: 0, nouveauxParMois: [] },
   recents:      { contrats: [], factures: [], utilisateurs: [] },
+  periode:      { debut: null, fin: null },
 };
 
 /* ─── Petit graphique en barres (réutilise .chart-bars du CSS) ─── */
@@ -58,25 +59,47 @@ export default function Dashboard() {
   const [stats, setStats]     = useState(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [erreur, setErreur]   = useState(false);
+  // Période personnalisée — vide = comportement par défaut du backend
+  // (6 derniers mois).
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo]     = useState("");
+
+  // Identifie la requête la plus récente : ignore une réponse devenue
+  // obsolète si la période a changé avant qu'elle ne revienne.
+  const requestIdRef = useRef(0);
 
   const fetchStats = async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setErreur(false);
     try {
-      const res = await statistiques();
+      const res = await statistiques({ dateFrom, dateTo });
+      if (requestId !== requestIdRef.current) return;
       // L'endpoint renvoie l'objet stats directement dans `data` (déjà déballé par le service)
       if (res) setStats({ ...EMPTY_STATS, ...res });
     } catch (error) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Erreur lors de la récupération des statistiques :", error);
       setErreur(true);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
-  useEffect(() => { fetchStats(); }, []);
+  // Debounce des changements de période — évite de relancer l'appel API à
+  // chaque segment saisi dans les <input type="date"> (jour/mois/année).
+  useEffect(() => {
+    const t = setTimeout(() => { fetchStats(); }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom, dateTo]);
 
-  const { utilisateurs, contrats, factures, documents, recents } = stats;
+  const resetPeriode = () => { setDateFrom(""); setDateTo(""); };
+
+  const { utilisateurs, contrats, factures, documents, recents, periode } = stats;
+  const periodeLabel = (dateFrom && dateTo)
+    ? `du ${periode.debut || dateFrom} au ${periode.fin || dateTo}`
+    : "6 derniers mois";
 
   // KPIs orientés pilotage de la plateforme
   const kpis = [
@@ -107,6 +130,25 @@ export default function Dashboard() {
           <p className="header-subtitle">Croissance des utilisateurs et activité documentaire</p>
         </div>
         <div className="filters-container">
+          <input
+            type="date"
+            className="filter-select"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            title="Période — à partir de"
+          />
+          <input
+            type="date"
+            className="filter-select"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            title="Période — jusqu'à"
+          />
+          {(dateFrom || dateTo) && (
+            <button className="refresh-btn" onClick={resetPeriode}>
+              Réinitialiser
+            </button>
+          )}
           <button className="refresh-btn" onClick={fetchStats}>
             <RefreshCw size={16} />
             Actualiser
@@ -149,7 +191,7 @@ export default function Dashboard() {
       <div className="charts-grid">
         <div className="chart-container">
           <div className="chart-header">
-            <span className="chart-title">Documents générés (6 derniers mois)</span>
+            <span className="chart-title">Documents générés ({periodeLabel})</span>
             <FileText size={18} color="#14b8a6" />
           </div>
           <div className="chart-placeholder" style={{ background: "transparent" }}>
@@ -186,7 +228,7 @@ export default function Dashboard() {
       <div className="charts-grid">
         <div className="chart-container">
           <div className="chart-header">
-            <span className="chart-title">Nouveaux utilisateurs (6 derniers mois)</span>
+            <span className="chart-title">Nouveaux utilisateurs ({periodeLabel})</span>
             <TrendingUp size={18} color="#10b981" />
           </div>
           <div className="chart-placeholder" style={{ background: "transparent" }}>

@@ -36,14 +36,22 @@ export function useServerList(fetchFn, { limit = 20, debounceMs = 400, extraDeps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPage(1); }, [debouncedSearch, ...extraDeps]);
 
+  // Identifie la requête la plus récente : si une réponse plus ancienne
+  // revient après une plus récente (filtre changé entre-temps), on l'ignore
+  // pour ne pas écraser l'affichage avec des données obsolètes.
+  const requestIdRef = useRef(0);
+
   const reload = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setAccessDenied(false);
     try {
       const result = await fetchFnRef.current({ page, limit, search: debouncedSearch });
+      if (requestId !== requestIdRef.current) return;
       setItems(result.items || []);
       setPagination(result.pagination || { total: 0, totalPages: 1 });
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       if (err?.response?.status === 403) {
         setAccessDenied(true);
       } else {
@@ -51,7 +59,7 @@ export function useServerList(fetchFn, { limit = 20, debounceMs = 400, extraDeps
         SwalCustom.fire({ icon: 'error', title: 'Erreur', text: msg });
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, debouncedSearch, ...extraDeps]);

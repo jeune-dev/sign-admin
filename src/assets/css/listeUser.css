@@ -75,6 +75,22 @@
   max-width: 500px;
 }
 
+.filter-select {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #111827;
+}
+
 .search-icon {
   position: absolute;
   left: 14px;

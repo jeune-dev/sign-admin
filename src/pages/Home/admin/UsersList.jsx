@@ -9,6 +9,7 @@ import {
   listeUtilisateurs,
   activerUtilisateur,
   desactiverUtilisateur,
+  rejeterUtilisateur,
   supprimerUtilisateur
 } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
@@ -20,6 +21,9 @@ const formatUserRow = (user) => ({
 });
 
 export default function UsersList() {
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statutFilter, setStatutFilter] = useState('');
+
   // Pagination + recherche gérées côté serveur — le backend
   // (requirePermission('users')) est la seule source de vérité : le menu
   // peut être trafiqué côté client, mais la donnée réelle n'est jamais
@@ -30,13 +34,16 @@ export default function UsersList() {
     search: searchTerm, setSearch: setSearchTerm,
   } = useServerList(
     async ({ page, limit, search }) => {
-      const res = await listeUtilisateurs({ page, limit, search });
+      const res = await listeUtilisateurs({ page, limit, search, role: roleFilter, statut: statutFilter });
       return { items: (res.utilisateurs || []).map(formatUserRow), pagination: res.pagination };
     },
-    { limit: 10 }
+    { limit: 10, extraDeps: [roleFilter, statutFilter] }
   );
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [rejectMotif, setRejectMotif] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   // Activer/Désactiver
   const handleToggleStatus = async (user) => {
@@ -64,6 +71,34 @@ export default function UsersList() {
     } catch (err) {
       console.error('Erreur lors du changement de statut :', err);
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
+    }
+  };
+
+  // Rejeter un document d'identité (compte → 'inactif' avec motif)
+  const openRejectModal = (user) => {
+    setSelectedUser(null);
+    setRejectMotif('');
+    setRejectTarget(user);
+  };
+
+  const handleReject = async () => {
+    if (!rejectTarget) return;
+    const motif = rejectMotif.trim();
+    if (!motif) {
+      SwalCustom.fire({ icon: 'warning', title: 'Motif requis', text: 'Merci de préciser le motif du rejet.' });
+      return;
+    }
+    setRejecting(true);
+    try {
+      await rejeterUtilisateur(rejectTarget.id, motif);
+      setRejectTarget(null);
+      setRejectMotif('');
+      await reload();
+      SwalCustom.fire({ icon: 'success', title: 'Rejeté', text: 'Le document a été rejeté et le compte désactivé.', timer: 2500, timerProgressBar: true, showConfirmButton: false });
+    } catch (err) {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Impossible de rejeter ce compte' });
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -127,6 +162,26 @@ export default function UsersList() {
             </button>
           )}
         </div>
+        <select
+          className="filter-select"
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+        >
+          <option value="">Tous les rôles</option>
+          <option value="Particulier">Particulier</option>
+          <option value="Independant">Indépendant</option>
+          <option value="Professionnel">Professionnel</option>
+        </select>
+        <select
+          className="filter-select"
+          value={statutFilter}
+          onChange={(e) => setStatutFilter(e.target.value)}
+        >
+          <option value="">Tous les statuts</option>
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif</option>
+          <option value="en_attente_validation">En attente de validation</option>
+        </select>
         <div className="search-stats">
           {total} utilisateur{total > 1 ? 's' : ''}
         </div>
@@ -201,6 +256,12 @@ export default function UsersList() {
                         {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
                         <span>{isActif ? 'Désactiver' : isPending ? 'Valider' : 'Activer'}</span>
                       </button>
+                      {isPending && (
+                        <button className="action-btn btn-disable" onClick={() => openRejectModal(user)} title="Rejeter le document">
+                          <XIcon size={16} />
+                          <span>Rejeter</span>
+                        </button>
+                      )}
                       <button className="action-btn btn-delete" onClick={() => handleDelete(user)} title="Supprimer (RGPD)">
                         <Trash2 size={16} />
                         <span>Supprimer</span>
@@ -302,6 +363,16 @@ export default function UsersList() {
               </div>
             </div>
 
+            {selectedUser.statut === 'inactif' && selectedUser.motif_rejet && (
+              <div className="modal-info-item" style={{ marginTop: 8 }}>
+                <XIcon size={18} />
+                <div>
+                  <label>Motif du rejet</label>
+                  <p>{selectedUser.motif_rejet}</p>
+                </div>
+              </div>
+            )}
+
             {selectedUser.document_identite_url && (
               <div className="modal-document-preview">
                 <label>Photo du document</label>
@@ -315,6 +386,14 @@ export default function UsersList() {
               <button className="modal-btn modal-btn-secondary" onClick={() => setSelectedUser(null)}>
                 Fermer
               </button>
+              {selectedUser.statut === 'en_attente_validation' && (
+                <button
+                  className="modal-btn modal-btn-danger"
+                  onClick={() => openRejectModal(selectedUser)}
+                >
+                  Rejeter le document
+                </button>
+              )}
               <button
                 className={`modal-btn ${selectedUser.statut === 'actif' ? 'modal-btn-danger' : 'modal-btn-success'}`}
                 onClick={() => {
@@ -325,6 +404,40 @@ export default function UsersList() {
                 {selectedUser.statut === 'actif' ? 'Désactiver'
                   : selectedUser.statut === 'en_attente_validation' ? 'Valider le document'
                   : 'Activer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL - Rejet du document d'identité */}
+      {rejectTarget && (
+        <div className="modal-overlay" onClick={() => !rejecting && setRejectTarget(null)}>
+          <div className="modern-modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => !rejecting && setRejectTarget(null)}>×</button>
+            <h2 className="modal-name">Rejeter le document</h2>
+            <p className="modal-role">
+              {rejectTarget.prenom} {rejectTarget.nom} — {rejectTarget.email}
+            </p>
+            <div className="modal-divider"></div>
+            <div style={{ padding: '0 8px', textAlign: 'left' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 8 }}>
+                Motif du rejet
+              </label>
+              <textarea
+                value={rejectMotif}
+                onChange={(e) => setRejectMotif(e.target.value)}
+                rows={4}
+                placeholder="Ex : document illisible, informations incohérentes, photo non conforme..."
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #ddd', resize: 'vertical' }}
+              />
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-secondary" onClick={() => setRejectTarget(null)} disabled={rejecting}>
+                Annuler
+              </button>
+              <button className="modal-btn modal-btn-danger" onClick={handleReject} disabled={rejecting}>
+                {rejecting ? 'Rejet en cours...' : 'Confirmer le rejet'}
               </button>
             </div>
           </div>

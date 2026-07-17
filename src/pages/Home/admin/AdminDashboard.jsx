@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ScrollText,
-  Smartphone
+  Smartphone,
+  History
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import { logout as authLogout } from '../../../service/auth/authService';
@@ -25,6 +26,7 @@ import ContratsList from './ContratsList';
 import AdminList from './AdminList';
 import Profile from './Profile';
 import AppVersionPage from './AppVersionPage';
+import AuditLogPage from './AuditLogPage';
 
 // Import logo et CSS
 import logoImage from '../../../assets/images/logo.jpeg';
@@ -76,6 +78,7 @@ export default function AdminDashboard() {
     { id: 'contrats', label: 'Contrats', icon: ScrollText, perm: 'contrats' },
     { id: 'admins', label: 'Administrateurs', icon: Shield, perm: 'admins' },
     { id: 'app-version', label: 'Mises à jour app', icon: Smartphone, perm: 'admins' },
+    { id: 'audit-log', label: "Journal d'audit", icon: History, perm: 'admins' },
     { id: 'profile', label: 'Mon profil', icon: User, perm: null },
     { id: 'logout', label: 'Déconnexion', icon: LogOut, perm: null }
   ];
@@ -266,6 +269,7 @@ export default function AdminDashboard() {
             {activeMenu === 'contrats' && 'Gestion des contrats'}
             {activeMenu === 'admins' && 'Gestion des administrateurs'}
             {activeMenu === 'app-version' && 'Mises à jour de l\'application'}
+            {activeMenu === 'audit-log' && "Journal d'audit"}
             {activeMenu === 'profile' && 'Mon profil'}
           </h1>
         </div>
@@ -277,6 +281,7 @@ export default function AdminDashboard() {
           {activeMenu === 'contrats' && <ContratsList />}
           {activeMenu === 'admins' && <AdminList />}
           {activeMenu === 'app-version' && <AppVersionPage />}
+          {activeMenu === 'audit-log' && <AuditLogPage />}
           {activeMenu === 'profile' && <Profile />}
         </div>
       </main>

@@ -46,10 +46,16 @@ export const nombreUtilisateur = async () => {
   return unwrap(response);
 };
 
-/* Liste des factures (pagination + recherche côté serveur) */
-export const listeFactures = async ({ page = 1, limit = 20, search = '' } = {}) => {
+/* Liste des factures (pagination + recherche + filtres côté serveur) */
+export const listeFactures = async ({ page = 1, limit = 20, search = '', statut = '', dateFrom = '', dateTo = '' } = {}) => {
   const response = await api.get('/admin/liste-factures', {
-    params: { page, limit, search: search?.trim() || undefined },
+    params: {
+      page, limit,
+      search: search?.trim() || undefined,
+      statut: statut || undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    },
   });
   return unwrap(response);
 };
@@ -60,10 +66,15 @@ export const nombreFacture = async () => {
   return unwrap(response);
 };
 
-/* Liste des utilisateurs (pagination + recherche côté serveur) */
-export const listeUtilisateurs = async ({ page = 1, limit = 20, search = '' } = {}) => {
+/* Liste des utilisateurs (pagination + recherche + filtres côté serveur) */
+export const listeUtilisateurs = async ({ page = 1, limit = 20, search = '', role = '', statut = '' } = {}) => {
   const response = await api.get('/admin/liste-utilisateur', {
-    params: { page, limit, search: search?.trim() || undefined },
+    params: {
+      page, limit,
+      search: search?.trim() || undefined,
+      role: role || undefined,
+      statut: statut || undefined,
+    },
   });
   return unwrap(response);
 };
@@ -106,9 +117,21 @@ export const desactiverUtilisateur = async (id) => {
   return unwrap(response);
 };
 
+/* Rejeter le document d'identité d'un utilisateur (motif obligatoire) — passe le compte à 'inactif' */
+export const rejeterUtilisateur = async (id, motif) => {
+  const response = await api.patch(`/admin/rejeter-utilisateur/${id}`, { motif });
+  return unwrap(response);
+};
+
 /* Supprimer un utilisateur (RGPD) */
 export const supprimerUtilisateur = async (id) => {
   const response = await api.delete(`/admin/utilisateur/${id}`);
+  return unwrap(response);
+};
+
+/* Journal d'audit (pagination côté serveur) */
+export const listerAuditLog = async ({ page = 1, limit = 20 } = {}) => {
+  const response = await api.get('/admin/audit-log', { params: { page, limit } });
   return unwrap(response);
 };
 
@@ -131,8 +154,10 @@ export const nombreContrats = async () => {
 };
 
 /* ─── Statistiques globales du dashboard (endpoint agrégé) ──── */
-export const statistiques = async () => {
-  const response = await api.get('/admin/statistiques');
+export const statistiques = async ({ dateFrom = '', dateTo = '' } = {}) => {
+  const response = await api.get('/admin/statistiques', {
+    params: { dateFrom: dateFrom || undefined, dateTo: dateTo || undefined },
+  });
   return unwrap(response);
 };
 
