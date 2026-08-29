@@ -129,8 +129,10 @@
 }
 
 .input-wrapper.error {
-  border-color: #ef4444;
-  background: #fff8f8;
+  /* Le fond rose (#fff8f8) teintait tout le champ ; la bordure suffit a
+     signaler l'erreur sans salir un formulaire par ailleurs neutre. */
+  border-color: #e11d48;
+  background: #fff;
 }
 
 .input-icon {
@@ -164,7 +166,9 @@
 }
 
 .error-text {
-  color: #ef4444;
+  /* Rose-700 plutot que le rouge sature d'origine : meme lisibilite sur
+     blanc, sans l'agressivite qui detonnait dans une page monochrome. */
+  color: #be123c;
   font-size: 11.5px;
   margin-top: 5px;
   display: block;
@@ -255,21 +259,87 @@
 
 /* ============================================================
    TOAST
+   ------------------------------------------------------------
+   La page est monochrome (zinc + blanc, accent noir). Un aplat
+   rouge vif pour les erreurs jurait avec cette identite, alors
+   que le toast de succes etait deja passe en noir : les deux ne
+   se ressemblaient pas.
+
+   Les deux partagent desormais la meme surface sombre, et c'est
+   une barre d'accent laterale + la teinte de l'icone qui portent
+   la nature du message. Le signal reste immediat sans crier, et
+   la couleur ne repose pas uniquement sur le fond — un aplat
+   rouge sature nuit d'ailleurs a la lisibilite du texte blanc.
    ============================================================ */
 .Toastify__toast {
-  border-radius: 10px !important;
+  position: relative;
+  min-height: auto !important;
+  padding: 13px 14px !important;
+  border-radius: 12px !important;
+  background: #18181b !important;
+  color: #fafafa !important;
   font-family: 'Inter', sans-serif !important;
   font-size: 13px !important;
   font-weight: 500 !important;
+  line-height: 1.45 !important;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.45),
+              0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  overflow: hidden !important;
 }
 
-.Toastify__toast--success {
-  background: #18181b !important;
+/* Barre d'accent : 3px a gauche, seule marque distinctive */
+.Toastify__toast::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: #71717a;
 }
 
-.Toastify__toast--error {
-  background: #ef4444 !important;
+.Toastify__toast--error::before {
+  background: #fb7185;
 }
+
+.Toastify__toast--success::before {
+  background: #34d399;
+}
+
+.Toastify__toast-body {
+  align-items: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 10px !important;
+}
+
+/* L'icone reprend la teinte de l'accent */
+.Toastify__toast-icon {
+  width: 17px !important;
+  margin-inline-end: 0 !important;
+}
+
+.Toastify__toast--error .Toastify__toast-icon svg { fill: #fb7185; }
+.Toastify__toast--success .Toastify__toast-icon svg { fill: #34d399; }
+
+.Toastify__close-button {
+  color: #a1a1aa !important;
+  opacity: 1 !important;
+  align-self: center !important;
+  transition: color 0.15s ease;
+}
+
+.Toastify__close-button:hover {
+  color: #fafafa !important;
+}
+
+.Toastify__progress-bar {
+  height: 2px !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+.Toastify__progress-bar--error { background: #fb7185 !important; }
+.Toastify__progress-bar--success { background: #34d399 !important; }
 
 /* ============================================================
    RESPONSIVE

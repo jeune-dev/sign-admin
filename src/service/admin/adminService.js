@@ -123,6 +123,71 @@ export const rejeterUtilisateur = async (id, motif) => {
   return unwrap(response);
 };
 
+/* ─── Demandes d'inscription ────────────────────────────────────────────── */
+
+/* File des demandes, filtrable par statut et par recherche libre */
+export const listerDemandesInscription = async ({ page = 1, limit = 20, statut = '', search = '' } = {}) => {
+  const response = await api.get('/admin/demandes-inscription', {
+    params: { page, limit, statut, search },
+  });
+  return unwrap(response);
+};
+
+/* Indicateurs affichés en tête de la file */
+export const statsDemandesInscription = async () => {
+  const response = await api.get('/admin/demandes-inscription/stats');
+  return unwrap(response);
+};
+
+/* Fiche détaillée — c'est ici que figurent les numéros à confronter aux pièces */
+export const detailDemandeInscription = async (id) => {
+  const response = await api.get(`/admin/demandes-inscription/${id}`);
+  return unwrap(response);
+};
+
+/* Approuver : lève le quota et prévient l'utilisateur par e-mail */
+export const validerDemandeInscription = async (id) => {
+  const response = await api.patch(`/admin/demandes-inscription/${id}/valider`);
+  return unwrap(response);
+};
+
+/* Refuser : le motif est envoyé à l'utilisateur, il est donc obligatoire */
+export const rejeterDemandeInscription = async (id, motif) => {
+  const response = await api.patch(`/admin/demandes-inscription/${id}/rejeter`, { motif });
+  return unwrap(response);
+};
+
+/* ─── Justificatifs d'identité / d'activité (§ 12 du nouveau parcours) ─── */
+
+/* Justificatifs déposés par un utilisateur donné */
+export const listerJustificatifsUtilisateur = async (id) => {
+  const response = await api.get(`/admin/justificatifs/utilisateur/${id}`);
+  return unwrap(response);
+};
+
+/*
+ * Contenu d'un justificatif.
+ *
+ * Ces fichiers sont chiffrés dans un espace privé : ils ne sont accessibles
+ * que par cette route authentifiée, jamais par une URL publique. On récupère
+ * donc un Blob, dont l'appelant fait une URL d'objet à révoquer après usage.
+ */
+export const telechargerJustificatif = async (id) => {
+  const response = await api.get(`/admin/justificatifs/${id}/fichier`, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
+/* Valider ou refuser un justificatif (motif obligatoire en cas de refus) */
+export const statuerJustificatif = async (id, statut, motifRejet) => {
+  const response = await api.patch(`/admin/justificatifs/${id}/statut`, {
+    statut,
+    ...(motifRejet ? { motifRejet } : {}),
+  });
+  return unwrap(response);
+};
+
 /* Supprimer un utilisateur (RGPD) */
 export const supprimerUtilisateur = async (id) => {
   const response = await api.delete(`/admin/utilisateur/${id}`);
@@ -130,8 +195,18 @@ export const supprimerUtilisateur = async (id) => {
 };
 
 /* Journal d'audit (pagination côté serveur) */
-export const listerAuditLog = async ({ page = 1, limit = 20 } = {}) => {
-  const response = await api.get('/admin/audit-log', { params: { page, limit } });
+export const listerAuditLog = async ({
+  page = 1, limit = 20, search = '', action = '', dateFrom = '', dateTo = '',
+} = {}) => {
+  const response = await api.get('/admin/audit-log', {
+    params: {
+      page, limit,
+      search: search?.trim() || undefined,
+      action: action || undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    },
+  });
   return unwrap(response);
 };
 

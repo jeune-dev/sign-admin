@@ -88,6 +88,10 @@ export default function ContratsList() {
     exportToCsv('contrats', [
       { header: 'N° Contrat', value: (c) => c.numero_contrat },
       { header: 'Type', value: (c) => c.type },
+      { header: 'Créé par', value: (c) => nomComplet(c.partie1) },
+      { header: 'E-mail créateur', value: (c) => c.partie1?.email || '' },
+      { header: 'Autre partie', value: (c) => nomComplet(c.partie2) },
+      { header: 'E-mail autre partie', value: (c) => c.partie2?.email || '' },
       { header: 'Statut', value: (c) => c.statut },
       { header: 'Date', value: (c) => formatDate(c.date) },
     ], all);
@@ -103,7 +107,7 @@ export default function ContratsList() {
         <Search size={18} className="search-icon" />
         <input
           type="text"
-          placeholder="Rechercher par numéro de contrat..."
+          placeholder="N° de contrat, type, nom, e-mail ou téléphone d’une partie…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -149,6 +153,8 @@ export default function ContratsList() {
                 <tr>
                   <th>N° Contrat</th>
                   <th>Type</th>
+                  <th>Créé par</th>
+                  <th>Autre partie</th>
                   <th>Date</th>
                   <th>Statut</th>
                   <th>Actions</th>
@@ -161,6 +167,8 @@ export default function ContratsList() {
                     <td>
                       <span className={`type-badge type-${c.typeCode}`}>{c.type}</span>
                     </td>
+                    <td><Personne personne={c.partie1} /></td>
+                    <td><Personne personne={c.partie2} /></td>
                     <td>{formatDate(c.date)}</td>
                     <td><StatusBadge statut={c.statut} /></td>
                     <td className="actions">
@@ -209,5 +217,28 @@ export default function ContratsList() {
         )}
       </div>
     </>
+  );
+}
+
+/* `prenom nom` d'une personne, ou chaîne vide si rien d'exploitable. */
+function nomComplet(personne) {
+  if (!personne) return '';
+  return `${personne.prenom || ''} ${personne.nom || ''}`.trim();
+}
+
+/* Identité sur deux lignes : le nom, puis l'e-mail en dessous — c'est par
+   l'e-mail qu'on recoupe un compte, et il sert de clé de recherche. */
+function Personne({ personne }) {
+  const nom = nomComplet(personne);
+  if (!nom && !personne?.email) return <span className="cellule-vide">-</span>;
+  return (
+    <div className="cellule-personne">
+      <span className="cellule-personne-nom">{nom || '-'}</span>
+      {personne?.email && (
+        <a className="cellule-personne-email" href={`mailto:${personne.email}`} title={personne.email}>
+          {personne.email}
+        </a>
+      )}
+    </div>
   );
 }

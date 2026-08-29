@@ -1,0 +1,827 @@
+/* ===========================================================================
+   Demandes d'inscription — file de vérification d'identité.
+   Le cœur de la page est la fiche de revue : elle met la pièce déposée et les
+   informations saisies côte à côte, parce que la décision consiste justement à
+   vérifier que les deux concordent.
+   ---------------------------------------------------------------------------
+   La liste, la recherche et la pagination réutilisent le vocabulaire de
+   listeUser.css (.table-wrapper, .users-table, .search-*, .pagination-*) pour
+   rester identiques aux autres pages du dashboard. Seul ce qui est propre à
+   cette page est défini ici, sous le préfixe `di-`.
+   ========================================================================= */
+
+/* La fiche de revue est un calque plein écran : elle porte les mêmes tokens
+   que la page pour rester lisible même si elle était un jour rendue hors de
+   l'arbre `.di-page` (portail, autre point de montage). */
+.di-page,
+.di-review {
+  --di-texte: #111827;
+  --di-texte-doux: #6b7280;
+  --di-bordure: #e5e7eb;
+  --di-fond: #f9fafb;
+  --di-surface: #ffffff;
+}
+
+/* ── Indicateurs ─────────────────────────────────────────────────────────── */
+.di-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.di-kpi {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 16px;
+  background: var(--di-surface);
+  border: 1px solid var(--di-bordure);
+  border-radius: 14px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.di-kpi:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.di-kpi-icone {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.di-kpi-valeur {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--di-texte);
+  line-height: 1.1;
+}
+
+.di-kpi-libelle {
+  font-size: 12.5px;
+  color: var(--di-texte-doux);
+  margin-top: 2px;
+}
+
+/* Rappel du quota appliqué tant que le compte n'est pas vérifié */
+.di-quota {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  margin-bottom: 18px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 11px;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.di-quota svg {
+  flex-shrink: 0;
+}
+
+/* ── Onglets de statut ───────────────────────────────────────────────────
+   Une file de triage se parcourt par statut : des onglets valent mieux qu'un
+   <select>, la bascule se fait en un clic et l'état courant reste visible. */
+.di-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.di-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--di-fond);
+  border: 1px solid var(--di-bordure);
+  border-radius: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.di-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.di-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--di-texte-doux);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.di-tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--di-texte);
+}
+
+.di-tab.active {
+  background: var(--di-surface);
+  color: var(--di-texte);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.09);
+}
+
+.di-tab-compteur {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.07);
+  font-size: 11.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.di-tab.active .di-tab-compteur {
+  background: var(--di-texte);
+  color: #fff;
+}
+
+/* ── Cellules de la liste ────────────────────────────────────────────────── */
+.di-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.di-pieces {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--di-texte);
+}
+
+.di-pieces.vide {
+  color: #c62828;
+}
+
+.di-sous-ligne {
+  font-size: 12px;
+  color: var(--di-texte-doux);
+  margin-top: 2px;
+}
+
+/* ── Fiche de revue ──────────────────────────────────────────────────────
+   Volet gauche : la pièce. Volet droit : ce que le client a saisi.
+   Les deux restent visibles ensemble — c'est toute la raison d'être de
+   l'écran, et ça évitait l'ouverture dans un onglet séparé qui obligeait à
+   mémoriser le numéro avant de revenir le comparer. */
+.di-review {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 96%;
+  max-width: 1180px;
+  /* Plancher : sans lui, une fiche courte réduirait la scène à presque rien.
+     Le `min()` évite qu'il dépasse le plafond sur un écran bas. */
+  min-height: min(560px, 92vh);
+  max-height: 92vh;
+  background: var(--di-surface);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  animation: diReviewIn 0.24s ease;
+}
+
+@keyframes diReviewIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.di-review-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--di-bordure);
+  flex-shrink: 0;
+}
+
+.di-review-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--di-texte);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.di-review-identite {
+  min-width: 0;
+  flex: 1;
+}
+
+.di-review-nom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--di-texte);
+  letter-spacing: -0.3px;
+}
+
+.di-review-contact {
+  font-size: 13px;
+  color: var(--di-texte-doux);
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.di-review-fermer {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--di-bordure);
+  border-radius: 10px;
+  background: var(--di-surface);
+  color: var(--di-texte-doux);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.di-review-fermer:hover {
+  background: var(--di-fond);
+  color: var(--di-texte);
+}
+
+.di-review-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Volet gauche : visionneuse ──────────────────────────────────────────
+   `min-height: 0` est LA règle qui fait tenir la fiche. Un élément de grille
+   vaut `min-height: auto` par défaut : il refuse de descendre sous la hauteur
+   de son contenu. Une photo de pièce prise au téléphone (portrait, ~2400px)
+   étirait donc la ligne à plus de 1300px dans une modale plafonnée à 92vh —
+   le bas était rogné, la colonne de droite ne défilait plus, et l'image
+   s'affichait à sa taille brute puisque son `max-height: 100%` se calculait
+   sur une hauteur elle-même dictée par l'image. */
+.di-viewer {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--di-fond);
+  border-right: 1px solid var(--di-bordure);
+}
+
+.di-viewer-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--di-surface);
+  border-bottom: 1px solid var(--di-bordure);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.di-viewer-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.di-piece-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--di-bordure);
+  border-radius: 9px;
+  background: var(--di-surface);
+  color: var(--di-texte-doux);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.di-piece-tab:hover {
+  border-color: #9ca3af;
+  color: var(--di-texte);
+}
+
+.di-piece-tab.active {
+  background: var(--di-texte);
+  border-color: var(--di-texte);
+  color: #fff;
+}
+
+/* Pastille d'état de la pièce (validée / refusée / en attente) */
+.di-piece-etat {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.di-viewer-stage {
+  flex: 1;
+  /* Idem : élément flex, donc `min-height: auto` par défaut. Sans ce 0, la
+     scène se dimensionne sur l'image au lieu de l'inverse. */
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 8px;
+  background:
+    linear-gradient(45deg, #eceef1 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(-45deg, #eceef1 25%, transparent 25%) -8px 0/16px 16px,
+    linear-gradient(45deg, transparent 75%, #eceef1 75%) 0 0/16px 16px,
+    linear-gradient(-45deg, transparent 75%, #eceef1 75%) 0 0/16px 16px,
+    #f4f5f7;
+}
+
+/* Le damier ci-dessus rend visibles les bords d'une pièce photographiée sur
+   fond clair, qui se confondaient avec un fond blanc uni. */
+.di-viewer-image {
+  max-width: 100%;
+  /* Le `100%` suffit maintenant que la scène a une hauteur définie ; le
+     plafond en vh reste un filet si un futur changement de mise en page
+     redonnait une hauteur indéfinie au parent. */
+  max-height: min(100%, 78vh);
+  display: block;
+  transition: transform 0.18s ease;
+  transform-origin: center center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
+
+.di-viewer-pdf {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  border: none;
+  background: #fff;
+}
+
+.di-viewer-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--di-texte-doux);
+  font-size: 13.5px;
+}
+
+/* Loader des chargements de pièce */
+.di-spin {
+  animation: diSpin 0.9s linear infinite;
+}
+
+@keyframes diSpin {
+  to { transform: rotate(360deg); }
+}
+
+.di-viewer-message.erreur {
+  color: #c62828;
+}
+
+.di-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--di-bordure);
+  background: var(--di-surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.di-outil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--di-bordure);
+  border-radius: 9px;
+  background: var(--di-surface);
+  color: var(--di-texte);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.di-outil:hover:not(:disabled) {
+  background: var(--di-fond);
+}
+
+.di-outil:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.di-zoom-niveau {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--di-texte-doux);
+  min-width: 46px;
+  text-align: center;
+}
+
+.di-outil-fin {
+  margin-left: auto;
+}
+
+/* ── Volet droit : informations saisies ──────────────────────────────────── */
+.di-facts {
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.di-facts-groupe + .di-facts-groupe {
+  margin-top: 20px;
+}
+
+.di-facts-titre {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--di-texte-doux);
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--di-bordure);
+  margin-bottom: 11px;
+}
+
+.di-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 7px 0;
+}
+
+.di-fact-libelle {
+  flex: 0 0 118px;
+  font-size: 12.5px;
+  color: var(--di-texte-doux);
+  padding-top: 1px;
+}
+
+.di-fact-valeur {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--di-texte);
+  word-break: break-word;
+}
+
+.di-fact-valeur.vide {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+/* Les numéros à confronter à la pièce sont mis en avant et copiables :
+   c'est la comparaison caractère par caractère qui prend du temps. */
+.di-fact.cle .di-fact-valeur {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  letter-spacing: 0.4px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 7px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* Le surlignage épouse la valeur : étiré sur toute la colonne, il prenait
+     l'apparence d'un champ de saisie modifiable. */
+  flex: 0 1 auto;
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.di-copier {
+  border: none;
+  background: transparent;
+  color: #92400e;
+  cursor: pointer;
+  display: inline-flex;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.di-copier:hover {
+  color: var(--di-texte);
+}
+
+/* Motif d'un refus précédent */
+.di-motif-precedent {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: #fdecec;
+  border: 1px solid #f7c9c9;
+  border-radius: 11px;
+  color: #7f1d1d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.di-motif-precedent svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Barre de décision ───────────────────────────────────────────────────── */
+.di-review-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--di-bordure);
+  background: var(--di-surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.di-foot-note {
+  font-size: 12.5px;
+  color: var(--di-texte-doux);
+  margin-right: auto;
+}
+
+.di-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.di-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.di-btn-neutre {
+  background: var(--di-surface);
+  border-color: var(--di-bordure);
+  color: #374151;
+}
+
+.di-btn-neutre:hover:not(:disabled) {
+  background: var(--di-fond);
+}
+
+.di-btn-refus {
+  background: #fff;
+  border-color: #f3b8b8;
+  color: #c62828;
+}
+
+.di-btn-refus:hover:not(:disabled) {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+
+.di-btn-valide {
+  background: #1b7f4b;
+  border-color: #1b7f4b;
+  color: #fff;
+}
+
+.di-btn-valide:hover:not(:disabled) {
+  background: #166b3f;
+}
+
+/* ── Panneau de refus ────────────────────────────────────────────────────
+   Remplace la boîte de dialogue à champ libre : des motifs prêts à cocher
+   évitent de réécrire les mêmes phrases et rendent les refus homogènes d'un
+   admin à l'autre. L'aperçu montre le texte exact reçu par le client. */
+.di-reject {
+  border-top: 1px solid var(--di-bordure);
+  padding: 16px 22px 18px;
+  background: #fffafa;
+  flex-shrink: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.di-reject-titre {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #c62828;
+  margin-bottom: 4px;
+}
+
+.di-reject-aide {
+  font-size: 12.5px;
+  color: var(--di-texte-doux);
+  margin-bottom: 12px;
+}
+
+.di-reject-motifs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.di-motif-chip {
+  padding: 8px 13px;
+  border: 1px solid var(--di-bordure);
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.di-motif-chip:hover {
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.di-motif-chip.active {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+
+.di-reject-textarea {
+  width: 100%;
+  min-height: 74px;
+  padding: 11px 13px;
+  border: 1px solid var(--di-bordure);
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--di-texte);
+  resize: vertical;
+  background: #fff;
+}
+
+.di-reject-textarea:focus {
+  outline: none;
+  border-color: #c62828;
+  box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.09);
+}
+
+.di-reject-apercu {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #fdecec;
+  border-left: 4px solid #c62828;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #7f1d1d;
+}
+
+.di-reject-apercu-titre {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
+  margin-bottom: 5px;
+}
+
+.di-reject-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* ── États de liste ──────────────────────────────────────────────────────── */
+.di-etat-vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 24px;
+  background: var(--di-surface);
+  border: 1px dashed var(--di-bordure);
+  border-radius: 16px;
+  color: var(--di-texte-doux);
+  font-size: 14px;
+}
+
+.di-etat-vide strong {
+  color: var(--di-texte);
+  font-size: 15px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────
+   Sous 1024px la lecture côte à côte n'a plus de place : les deux volets
+   s'empilent, la pièce d'abord puisque c'est elle qu'on regarde en premier. */
+@media (max-width: 1024px) {
+  .di-review-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .di-viewer {
+    border-right: none;
+    border-bottom: 1px solid var(--di-bordure);
+  }
+
+  /* Ici c'est `.di-review-body` qui défile : la scène retrouve une hauteur
+     libre, on la borne explicitement pour que la photo ne pousse pas les
+     informations hors de vue. */
+  .di-viewer-stage {
+    min-height: 280px;
+    max-height: 55vh;
+  }
+
+  .di-facts {
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .di-review {
+    width: 100%;
+    max-width: none;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .di-review-head,
+  .di-review-foot,
+  .di-reject {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .di-fact {
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .di-fact-libelle {
+    flex-basis: auto;
+  }
+
+  .di-review-foot .di-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .di-foot-note {
+    display: none;
+  }
+}

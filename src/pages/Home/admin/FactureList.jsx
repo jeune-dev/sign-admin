@@ -54,8 +54,10 @@ export default function FactureList() {
     );
     exportToCsv('factures', [
       { header: 'N° Facture', value: (f) => f.numero_facture },
-      { header: 'Client', value: (f) => f.client ? `${f.client.prenom || ''} ${f.client.nom || ''}`.trim() : '' },
-      { header: 'Professionnel', value: (f) => f.professionnel ? `${f.professionnel.prenom || ''} ${f.professionnel.nom || ''}`.trim() : '' },
+      { header: 'Client', value: (f) => nomComplet(f.client) || nomComplet({ prenom: f.client_prenom, nom: f.client_nom }) },
+      { header: 'E-mail client', value: (f) => f.client?.email || f.client_email || '' },
+      { header: 'Créé par', value: (f) => nomComplet(f.professionnel) },
+      { header: 'E-mail émetteur', value: (f) => f.professionnel?.email || '' },
       { header: 'Montant', value: (f) => f.montant },
       { header: 'Statut', value: (f) => f.statut },
       { header: "Date d'exécution", value: (f) => formatDate(f.date_execution) },
@@ -72,7 +74,7 @@ export default function FactureList() {
         <Search size={18} className="search-icon" />
         <input
           type="text"
-          placeholder="Rechercher par numéro, client ou professionnel..."
+          placeholder="N° de facture, nom, e-mail ou téléphone (client ou émetteur)…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -126,7 +128,7 @@ export default function FactureList() {
                   <th>N° Facture</th>
                   <th>Date d'exécution</th>
                   <th>Client</th>
-                  <th>Professionnel</th>
+                  <th>Créé par</th>
                   <th>Montant</th>
                   <th>Statut</th>
                   <th>Actions</th>
@@ -138,21 +140,23 @@ export default function FactureList() {
                     <td>{fact.numero_facture || '-'}</td>
                     <td>{formatDate(fact.date_execution)}</td>
                     <td>
-                      {fact.client
-                        ? `${fact.client.prenom || ''} ${fact.client.nom || ''}`.trim() || '-'
-                        : (fact.client_prenom || fact.client_nom)
-                          ? `${fact.client_prenom || ''} ${fact.client_nom || ''}`.trim()
-                          : '-'}
-                      {!fact.client && (fact.client_prenom || fact.client_nom) && (
-                        <span className="client-non-inscrit-badge" title="Client non inscrit sur l'application">
-                          {' '}(non inscrit)
-                        </span>
-                      )}
+                      <Personne
+                        nom={nomComplet(fact.client) || nomComplet({
+                          prenom: fact.client_prenom, nom: fact.client_nom,
+                        })}
+                        email={fact.client?.email || fact.client_email}
+                        suffixe={!fact.client && (fact.client_prenom || fact.client_nom) ? (
+                          <span className="client-non-inscrit-badge" title="Client non inscrit sur l'application">
+                            (non inscrit)
+                          </span>
+                        ) : null}
+                      />
                     </td>
                     <td>
-                      {fact.professionnel
-                        ? `${fact.professionnel.prenom || ''} ${fact.professionnel.nom || ''}`.trim() || '-'
-                        : '-'}
+                      <Personne
+                        nom={nomComplet(fact.professionnel)}
+                        email={fact.professionnel?.email}
+                      />
                     </td>
                     <td>{formatNombre(fact.montant)} FCFA</td>
                     <td>
@@ -200,5 +204,30 @@ export default function FactureList() {
         )}
       </div>
     </>
+  );
+}
+
+/* `prenom nom` d'une personne, ou chaîne vide si rien d'exploitable. */
+function nomComplet(personne) {
+  if (!personne) return '';
+  return `${personne.prenom || ''} ${personne.nom || ''}`.trim();
+}
+
+/* Identité sur deux lignes : le nom, puis l'e-mail en dessous. Les deux
+   comptent ici — c'est par l'e-mail qu'on recoupe un compte, et il sert de
+   clé de recherche. */
+function Personne({ nom, email, suffixe = null }) {
+  if (!nom && !email) return <span className="cellule-vide">-</span>;
+  return (
+    <div className="cellule-personne">
+      <span className="cellule-personne-nom">
+        {nom || '-'} {suffixe}
+      </span>
+      {email && (
+        <a className="cellule-personne-email" href={`mailto:${email}`} title={email}>
+          {email}
+        </a>
+      )}
+    </div>
   );
 }

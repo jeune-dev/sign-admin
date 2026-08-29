@@ -21,6 +21,7 @@ import {
 import SwalCustom from '../../../utils/swal.config';
 import AccessDenied from '../../../components/AccessDenied';
 import { useServerList } from '../../../hooks/useServerList';
+import { useUser } from '../../../context/useUser';
 import {
   listerAdmins,
   activerUtilisateur,
@@ -44,6 +45,11 @@ const FORM_VIDE = {
 };
 
 export default function AdminList() {
+  // La liste inclut l'admin connecté — c'est un écran de gestion des accès,
+  // l'y cacher donnait une vue fausse de qui a quels droits. En revanche les
+  // actions qui le verrouilleraient dehors lui sont refusées (le backend les
+  // rejette aussi : le garde-fou n'est pas seulement visuel).
+  const { user: adminConnecte } = useUser();
   // Pagination + recherche gérées côté serveur — le backend
   // (requirePermission('admins')) est la seule source de vérité : le menu
   // peut être trafiqué côté client, mais la donnée réelle n'est jamais
@@ -240,6 +246,7 @@ export default function AdminList() {
               <tbody>
                 {currentUsers.map(user => {
                   const isActif = user.statut === 'actif';
+                  const estMoi = String(user.id) === String(adminConnecte?.id);
                   return (
                     <tr key={user.id}>
                       <td>
@@ -258,6 +265,7 @@ export default function AdminList() {
                           <div className="user-details-cell">
                             <div className="user-name-cell">
                               {user.prenom} {user.nom}
+                              {estMoi && <span className="badge-moi">Vous</span>}
                             </div>
                             {user.telephone && (
                               <div className="user-phone-cell">
@@ -288,14 +296,24 @@ export default function AdminList() {
                           <Eye size={16} />
                           <span>Voir</span>
                         </button>
-                        <button className="action-btn btn-perms" onClick={() => ouvrirPermissions(user)} title="Modifier les permissions">
+                        <button
+                          className="action-btn btn-perms"
+                          onClick={() => ouvrirPermissions(user)}
+                          disabled={estMoi}
+                          title={estMoi
+                            ? 'Vous ne pouvez pas modifier vos propres permissions'
+                            : 'Modifier les permissions'}
+                        >
                           <KeyRound size={16} />
                           <span>Permissions</span>
                         </button>
                         <button
                           className={`action-btn ${isActif ? 'btn-disable' : 'btn-enable'}`}
                           onClick={() => handleToggleStatus(user)}
-                          title={isActif ? 'Désactiver' : 'Activer'}
+                          disabled={estMoi && isActif}
+                          title={estMoi && isActif
+                            ? 'Vous ne pouvez pas désactiver votre propre compte'
+                            : (isActif ? 'Désactiver' : 'Activer')}
                         >
                           {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
                           <span>{isActif ? 'Désactiver' : 'Activer'}</span>

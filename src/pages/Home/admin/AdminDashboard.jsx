@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Home,
   Users,
@@ -8,19 +8,21 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronLeft,
-  ChevronRight,
+  ChevronDown,
   ScrollText,
   Smartphone,
-  History
+  History,
+  UserCheck
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import { logout as authLogout } from '../../../service/auth/authService';
 import { useUser } from '../../../context/useUser';
+import AccessDenied from '../../../components/AccessDenied';
 
 // Import des composants
 import Dashboard from './Dashboard';
 import UsersList from './UsersList';
+import DemandesInscriptionPage from './DemandesInscriptionPage';
 import FacturesList from './FactureList';
 import ContratsList from './ContratsList';
 import AdminList from './AdminList';
@@ -32,29 +34,56 @@ import AuditLogPage from './AuditLogPage';
 import logoImage from '../../../assets/images/logo.jpeg';
 import '../../../assets/css/AdminDashboard.css';
 
-// Tooltip pour sidebar réduite — défini au niveau module (pas dans le render
-// d'AdminDashboard) pour que React ne remonte pas tout le sous-arbre du menu
-// à chaque re-render du parent.
-function MenuItemWithTooltip({ item, isActive, onClick, sidebarOpen }) {
-  return (
-    <div className={`menu-item-wrapper ${!sidebarOpen ? 'collapsed' : ''}`}>
-      <div
-        className={`menu-item ${isActive ? 'active' : ''}`}
-        onClick={() => onClick(item.id)}
-      >
-        <item.icon size={20} className="menu-icon" />
-        {sidebarOpen && <span className="menu-label">{item.label}</span>}
-      </div>
-      {!sidebarOpen && (
-        <div className="menu-tooltip">{item.label}</div>
-      )}
-    </div>
-  );
-}
+// Menu items — `perm` = permission requise (null = toujours visible).
+// `court` = libellé compact affiché dans la navbar (la barre est horizontale :
+// chaque caractère coûte de la largeur), `label` reste le libellé complet,
+// repris en title/aria et dans le menu mobile.
+// `titre`/`sousTitre` = en-tête rendu par le shell. Les pages qui portent déjà
+// leur propre en-tête sont marquées `enteteIntegree` pour ne pas l'afficher
+// deux fois.
+const TOUS_LES_MENUS = [
+  { id: 'dashboard', label: 'Accueil', court: 'Accueil', icon: Home, perm: null, enteteIntegree: true },
+  {
+    id: 'users', label: 'Utilisateurs', court: 'Utilisateurs', icon: Users, perm: 'users',
+    titre: 'Gestion des utilisateurs',
+    sousTitre: 'Comptes de la plateforme, justificatifs et statut d’activation.'
+  },
+  {
+    id: 'demandes', label: 'Demandes d’inscription', court: 'Demandes', icon: UserCheck, perm: 'users',
+    titre: 'Demandes d’inscription',
+    sousTitre: 'Confrontez les pièces déposées aux informations saisies avant de lever la limite de documents.'
+  },
+  {
+    id: 'factures', label: 'Factures', court: 'Factures', icon: FileText, perm: 'factures',
+    titre: 'Gestion des factures',
+    sousTitre: 'Documents facturés par les professionnels de la plateforme.'
+  },
+  {
+    id: 'contrats', label: 'Contrats', court: 'Contrats', icon: ScrollText, perm: 'contrats',
+    titre: 'Gestion des contrats',
+    sousTitre: 'Baux, contrats de travail et autres documents générés.'
+  },
+  {
+    id: 'admins', label: 'Administrateurs', court: 'Admins', icon: Shield, perm: 'admins',
+    titre: 'Gestion des administrateurs',
+    sousTitre: 'Comptes admin et permissions associées.'
+  },
+  { id: 'app-version', label: 'Mises à jour app', court: 'Versions', icon: Smartphone, perm: 'admins', enteteIntegree: true },
+  {
+    id: 'audit-log', label: "Journal d'audit", court: 'Audit', icon: History, perm: 'admins',
+    titre: "Journal d'audit",
+    sousTitre: 'Historique des actions sensibles effectuées par les admins.'
+  }
+];
 
 export default function AdminDashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  // Panneau de navigation mobile (la navbar ne peut pas tout afficher sous 900px)
+  const [menuMobileOuvert, setMenuMobileOuvert] = useState(false);
+  // Menu utilisateur (profil / déconnexion) ancré à droite de la navbar
+  const [menuUserOuvert, setMenuUserOuvert] = useState(false);
+  const refMenuUser = useRef(null);
+
   // Persisté en sessionStorage pour survivre à un rafraîchissement de page —
   // sans ça, F5 ramenait toujours sur "Accueil" quel que soit l'onglet actif.
   const [activeMenu, setActiveMenuState] = useState(
@@ -67,28 +96,15 @@ export default function AdminDashboard() {
 
   // Utilisateur connecté — présence + rôle déjà garantis par <ProtectedRoute>.
   // Vient du contexte partagé : si Profile met à jour l'utilisateur (photo,
-  // nom...), la sidebar se rafraîchit immédiatement, sans reload.
+  // nom...), la navbar se rafraîchit immédiatement, sans reload.
   const { user: currentUser } = useUser();
-
-  // Menu items — `perm` = permission requise (null = toujours visible)
-  const allMenuItems = [
-    { id: 'dashboard', label: 'Accueil', icon: Home, perm: null },
-    { id: 'users', label: 'Utilisateurs', icon: Users, perm: 'users' },
-    { id: 'factures', label: 'Factures', icon: FileText, perm: 'factures' },
-    { id: 'contrats', label: 'Contrats', icon: ScrollText, perm: 'contrats' },
-    { id: 'admins', label: 'Administrateurs', icon: Shield, perm: 'admins' },
-    { id: 'app-version', label: 'Mises à jour app', icon: Smartphone, perm: 'admins' },
-    { id: 'audit-log', label: "Journal d'audit", icon: History, perm: 'admins' },
-    { id: 'profile', label: 'Mon profil', icon: User, perm: null },
-    { id: 'logout', label: 'Déconnexion', icon: LogOut, perm: null }
-  ];
 
   // Filtrage selon les permissions de l'admin connecté — modèle STRICT,
   // identique à requirePermission() côté backend (permission.middleware.js) :
   // permissions null/vide = AUCUN accès implicite, seul ['all'] donne accès total.
   const perms = currentUser?.permissions;
   const hasFullAccess = Array.isArray(perms) && perms.includes('all');
-  const menuItems = allMenuItems.filter(
+  const menuItems = TOUS_LES_MENUS.filter(
     (item) => !item.perm || hasFullAccess || (Array.isArray(perms) && perms.includes(item.perm))
   );
 
@@ -97,12 +113,11 @@ export default function AdminDashboard() {
   // pendant un redimensionnement de fenêtre.
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth <= 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
+      const petitEcran = window.innerWidth <= 900;
+      setIsMobile(petitEcran);
+      // Repasser en grand écran doit refermer le panneau mobile, sinon il
+      // restait ouvert par-dessus la navbar.
+      if (!petitEcran) setMenuMobileOuvert(false);
     };
     checkMobile();
 
@@ -118,6 +133,25 @@ export default function AdminDashboard() {
       window.removeEventListener('resize', debouncedCheckMobile);
     };
   }, []);
+
+  // Fermeture du menu utilisateur : clic à l'extérieur ou touche Échap.
+  useEffect(() => {
+    if (!menuUserOuvert) return;
+    const surClicExterieur = (e) => {
+      if (refMenuUser.current && !refMenuUser.current.contains(e.target)) {
+        setMenuUserOuvert(false);
+      }
+    };
+    const surEchap = (e) => {
+      if (e.key === 'Escape') setMenuUserOuvert(false);
+    };
+    document.addEventListener('mousedown', surClicExterieur);
+    document.addEventListener('keydown', surEchap);
+    return () => {
+      document.removeEventListener('mousedown', surClicExterieur);
+      document.removeEventListener('keydown', surEchap);
+    };
+  }, [menuUserOuvert]);
 
   // Message après connexion
   useEffect(() => {
@@ -137,6 +171,7 @@ export default function AdminDashboard() {
 
   // Déconnexion
   const handleLogout = () => {
+    setMenuUserOuvert(false);
     SwalCustom.fire({
       title: 'Déconnexion',
       text: 'Êtes-vous sûr de vouloir vous déconnecter ?',
@@ -155,134 +190,185 @@ export default function AdminDashboard() {
 
   // Gestion clic menu
   const handleMenuClick = (menuId) => {
-    if (menuId === 'logout') {
-      handleLogout();
-    } else {
-      setActiveMenu(menuId);
-      if (isMobile) {
-        setSidebarOpen(false);
-      }
-    }
+    setActiveMenu(menuId);
+    setMenuMobileOuvert(false);
+    setMenuUserOuvert(false);
   };
 
   if (!currentUser) return null;
 
-  // Initiales pour l'avatar du footer (si aucune photo de profil)
+  // Initiales pour l'avatar (si aucune photo de profil)
   const initials = `${currentUser.prenom?.[0] || ''}${currentUser.nom?.[0] || ''}`.toUpperCase() || 'AD';
+
+  // L'onglet actif vient de sessionStorage : il peut désigner une rubrique que
+  // l'admin n'a plus le droit de voir (permission retirée en cours de session,
+  // ou valeur modifiée à la main). Le menu était filtré, mais pas le rendu du
+  // contenu : la page s'affichait quand même. Le backend refuse les appels,
+  // donc aucune donnée ne fuitait — mais l'écran se remplissait d'erreurs au
+  // lieu de dire clairement que l'accès est refusé.
+  // On résout l'onglet dans la liste FILTRÉE, seule source légitime.
+  const menuActif = menuItems.find((m) => m.id === activeMenu);
+  const rubriqueAutorisee = Boolean(menuActif) || activeMenu === 'profile';
+
+  const avatar = (classe) =>
+    currentUser.photoProfil ? (
+      <img src={currentUser.photoProfil} alt="" className={`${classe}-img`} />
+    ) : (
+      <span className="user-avatar-initials">{initials}</span>
+    );
 
   return (
     <div className="dashboard-container">
-      {/* Overlay mobile */}
-      {isMobile && sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {/* Bouton toggle mobile */}
-      {isMobile && !sidebarOpen && (
-        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
-          <Menu size={24} />
-        </button>
-      )}
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${!sidebarOpen ? 'collapsed' : ''} ${isMobile ? 'mobile' : ''}`}>
-        <div className="sidebar-header">
-          <div className="logo-area">
-            <div className="logo-icon">
-              <img src={logoImage} alt="Logo" />
+      {/* ===== NAVBAR ===== */}
+      <header className="topnav">
+        <div className="topnav-inner">
+          {/* Marque */}
+          <div className="topnav-brand">
+            <div className="topnav-logo">
+              <img src={logoImage} alt="Logo SIGN" />
             </div>
-            {sidebarOpen && <span className="logo-text">SIGN APP</span>}
-            {!sidebarOpen && <span className="logo-text-mini">SIGN</span>}
+            <span className="topnav-brand-text">SIGN APP</span>
           </div>
-          {isMobile && (
-            <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>
-              <X size={20} />
-            </button>
-          )}
+
+          {/* Navigation principale — défile horizontalement plutôt que de
+              passer à la ligne, pour que la hauteur de la barre reste fixe. */}
+          <nav className="topnav-menu" aria-label="Navigation principale">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`topnav-link ${activeMenu === item.id ? 'active' : ''}`}
+                onClick={() => handleMenuClick(item.id)}
+                title={item.label}
+                aria-current={activeMenu === item.id ? 'page' : undefined}
+              >
+                <item.icon size={17} className="topnav-link-icon" />
+                <span className="topnav-link-label">{item.court}</span>
+              </button>
+            ))}
+          </nav>
+
+          {/* Actions à droite : compte + burger mobile */}
+          <div className="topnav-actions">
+            <div className="topnav-user-wrap" ref={refMenuUser}>
+              <button
+                type="button"
+                className={`topnav-user ${activeMenu === 'profile' ? 'active' : ''}`}
+                onClick={() => setMenuUserOuvert((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={menuUserOuvert}
+                title={`${currentUser.prenom} ${currentUser.nom}`}
+              >
+                <div className="topnav-avatar">{avatar('user-avatar')}</div>
+                <div className="topnav-user-details">
+                  <span className="topnav-user-name">
+                    {currentUser.prenom} {currentUser.nom}
+                  </span>
+                  <span className="topnav-user-role">
+                    {currentUser.role || 'Administrateur'}
+                  </span>
+                </div>
+                <ChevronDown size={15} className={`topnav-caret ${menuUserOuvert ? 'open' : ''}`} />
+              </button>
+
+              {menuUserOuvert && (
+                <div className="topnav-dropdown" role="menu">
+                  <div className="topnav-dropdown-head">
+                    <div className="topnav-avatar lg">{avatar('user-avatar')}</div>
+                    <div>
+                      <div className="topnav-user-name">
+                        {currentUser.prenom} {currentUser.nom}
+                      </div>
+                      <div className="topnav-user-role">{currentUser.email}</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="topnav-dropdown-item"
+                    onClick={() => handleMenuClick('profile')}
+                  >
+                    <User size={16} /> Mon profil
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="topnav-dropdown-item danger"
+                    onClick={handleLogout}
+                  >
+                    <LogOut size={16} /> Déconnexion
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isMobile && (
+              <button
+                type="button"
+                className="topnav-burger"
+                onClick={() => setMenuMobileOuvert((o) => !o)}
+                aria-label={menuMobileOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+                aria-expanded={menuMobileOuvert}
+              >
+                {menuMobileOuvert ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
+          </div>
         </div>
 
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => (
-            <MenuItemWithTooltip
-              key={item.id}
-              item={item}
-              isActive={activeMenu === item.id}
-              onClick={handleMenuClick}
-              sidebarOpen={sidebarOpen}
-            />
-          ))}
-        </nav>
-
- {/* Sidebar Footer */}
-<div className="sidebar-footer">
-  {sidebarOpen ? (
-    <div className="user-info">
-      <div className="user-avatar">
-        {currentUser.photoProfil ? (
-          <img src={currentUser.photoProfil} alt="Photo profil" className="user-avatar-img" />
-        ) : (
-          <span className="user-avatar-initials">{initials}</span>
+        {/* Panneau de navigation mobile */}
+        {isMobile && menuMobileOuvert && (
+          <nav className="topnav-mobile" aria-label="Navigation principale">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`topnav-mobile-link ${activeMenu === item.id ? 'active' : ''}`}
+                onClick={() => handleMenuClick(item.id)}
+              >
+                <item.icon size={18} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
         )}
-      </div>
-      <div className="user-details">
-        <div className="user-name">
-          {currentUser.prenom} {currentUser.nom}
-        </div>
-        <div className="user-role">
-          {currentUser.role || 'Administrateur'}
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="user-info-collapsed">
-      <div className="user-avatar-mini">
-        {currentUser.photoProfil ? (
-          <img src={currentUser.photoProfil} alt="Photo profil" className="user-avatar-img-mini" />
-        ) : (
-          <span className="user-avatar-initials">{initials}</span>
-        )}
-      </div>
-    </div>
-  )}
-</div>
-        {/* ===== FIN SIDEBAR FOOTER ===== */}
-      </aside>
+      </header>
 
-      {/* Bouton toggle desktop — placé APRÈS la sidebar pour que le sélecteur CSS ~ fonctionne */}
-      {!isMobile && (
-        <button
-          className="sidebar-float-toggle"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label={sidebarOpen ? 'Réduire la sidebar' : 'Ouvrir la sidebar'}
-        >
-          {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-        </button>
+      {isMobile && menuMobileOuvert && (
+        <div className="topnav-overlay" onClick={() => setMenuMobileOuvert(false)} />
       )}
 
-      {/* Contenu principal */}
+      {/* ===== CONTENU ===== */}
       <main className="main-content">
-        <div className="topbar">
-          <h1 className="page-title">
-            {activeMenu === 'dashboard' && 'Tableau de bord'}
-            {activeMenu === 'users' && 'Gestion des utilisateurs'}
-            {activeMenu === 'factures' && 'Gestion des factures'}
-            {activeMenu === 'contrats' && 'Gestion des contrats'}
-            {activeMenu === 'admins' && 'Gestion des administrateurs'}
-            {activeMenu === 'app-version' && 'Mises à jour de l\'application'}
-            {activeMenu === 'audit-log' && "Journal d'audit"}
-            {activeMenu === 'profile' && 'Mon profil'}
-          </h1>
-        </div>
-
         <div className="content-area">
+          {/* En-tête de page rendu par le shell — uniquement pour les pages
+              qui n'en portent pas déjà un (évite le titre en double). */}
+          {rubriqueAutorisee && menuActif && !menuActif.enteteIntegree && (
+            <div className="page-heading">
+              <h1 className="page-heading-title">{menuActif.titre}</h1>
+              {menuActif.sousTitre && (
+                <p className="page-heading-subtitle">{menuActif.sousTitre}</p>
+              )}
+            </div>
+          )}
+
+          {!rubriqueAutorisee && (
+            <AccessDenied message="Vous n'avez pas la permission d'accéder à cette rubrique." />
+          )}
+
+          {rubriqueAutorisee && (
+            <>
           {activeMenu === 'dashboard' && <Dashboard />}
           {activeMenu === 'users' && <UsersList />}
+          {activeMenu === 'demandes' && <DemandesInscriptionPage />}
           {activeMenu === 'factures' && <FacturesList />}
           {activeMenu === 'contrats' && <ContratsList />}
           {activeMenu === 'admins' && <AdminList />}
           {activeMenu === 'app-version' && <AppVersionPage />}
           {activeMenu === 'audit-log' && <AuditLogPage />}
           {activeMenu === 'profile' && <Profile />}
+            </>
+          )}
         </div>
       </main>
     </div>

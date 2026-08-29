@@ -959,3 +959,43 @@
   border: 1px solid #e0e7ff;
 }
 .action-btn.btn-perms:hover { background: #3730a3; color: #fff; }
+
+/* Ligne de l'admin connecté — la liste l'inclut désormais, il faut pouvoir
+   la repérer d'un coup d'œil. */
+.user-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-moi {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--gray-900, #111827);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* Actions qui verrouilleraient l'admin dehors : neutralisées visuellement,
+   et refusées par le backend de toute façon. */
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Seuls ces deux boutons peuvent etre desactives (ligne de l'admin
+   connecte) : on restaure leur apparence de repos au survol, `inherit`
+   aurait rendu le fond transparent. */
+.action-btn.btn-perms:disabled:hover {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.action-btn.btn-disable:disabled:hover {
+  background: var(--danger);
+  color: #fff;
+  transform: none;
+}

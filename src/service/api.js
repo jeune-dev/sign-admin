@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Base de l'API : VITE_API_BASE_URL si fourni, sinon l'instance deployee.
+// Sans ce repli, une variable absente laissait baseURL a undefined et axios
+// tapait sur l'origine du dashboard — les appels echouaient en 404 muets.
+// Meme convention que l'app mobile (Env.apiBaseUrl a aussi un fallback).
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'https://api.app-signs.com/sign/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -18,6 +18,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --topnav-height: 60px;
 }
 
 * {
@@ -41,406 +42,385 @@ body {
 /* ===== CONTAINER ===== */
 .dashboard-container {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
 }
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-  position: fixed;
-  left: 0;
+/* ===== NAVBAR =====
+   Remplace l'ancienne sidebar fixe de 240px : la navigation passe en haut,
+   sur une seule ligne, et le contenu recupere toute la largeur de l'ecran. */
+.topnav {
+  position: sticky;
   top: 0;
-  height: 100vh;
-  width: 240px;
-  background: var(--sidebar-bg);
-  display: flex;
-  flex-direction: column;
-  transition: var(--transition);
   z-index: 100;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  overflow-x: hidden;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.sidebar.collapsed {
-  width: 80px;
-}
-
-.sidebar.mobile {
-  transform: translateX(-100%);
-}
-
-.sidebar.mobile:not(.collapsed) {
-  transform: translateX(0);
-}
-
-/* Sidebar Header */
-.sidebar-header {
-  padding: 22px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+.topnav-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 78px;
+  gap: 20px;
+  height: var(--topnav-height);
+  padding: 0 20px;
 }
 
-.logo-area {
+/* ── Marque ─────────────────────────────────────────────── */
+.topnav-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  overflow: hidden;
-}
-
-.logo-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--card-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 10px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-.logo-icon img {
+.topnav-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.topnav-logo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  display: block;
 }
 
-.logo-text {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--text-white);
-  white-space: nowrap;
-  letter-spacing: -0.3px;
-}
-
-.logo-text-mini {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--text-white);
-  white-space: nowrap;
-  letter-spacing: 1px;
-}
-
-.sidebar-close {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: var(--text-white);
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  flex-shrink: 0;
-}
-
-.sidebar-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Navigation */
-.sidebar-nav {
-  flex: 1;
-  padding: 16px 14px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.menu-item-wrapper {
-  position: relative;
-  margin-bottom: 2px;
-}
-
-.menu-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 11px 14px;
-  color: var(--sidebar-text);
-  cursor: pointer;
-  border-radius: 10px;
-  transition: background 0.18s ease, color 0.18s ease;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.menu-item:hover {
-  background: var(--sidebar-hover);
-  color: var(--text-white);
-}
-
-.menu-item.active {
-  background: var(--sidebar-active);
-  color: var(--text-white);
-  font-weight: 600;
-}
-
-/* Indicateur d'accent à gauche de l'élément actif */
-.menu-item.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 56%;
-  background: var(--sidebar-accent);
-  border-radius: 0 4px 4px 0;
-}
-
-.menu-item.active .menu-icon {
-  color: var(--text-white);
-}
-
-.menu-icon {
-  flex-shrink: 0;
-  opacity: 0.95;
-}
-
-.menu-label {
-  overflow: hidden;
-}
-
-/* Tooltip pour sidebar réduite */
-.menu-item-wrapper.collapsed .menu-item {
-  justify-content: center;
-  padding: 12px;
-}
-
-.menu-tooltip {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 14px;
-  background: #1a1d25;
-  color: var(--text-white);
-  padding: 7px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.18s ease, visibility 0.18s ease;
-  pointer-events: none;
-  z-index: 200;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-
-.menu-item-wrapper.collapsed:hover .menu-tooltip {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Sidebar Footer */
-.sidebar-footer {
-  padding: 14px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  margin-top: auto;
-}
-
-.user-info {
-  border-radius: 12px;
-  padding: 8px;
-  transition: background 0.18s ease;
-}
-
-.user-info:hover {
-  background: var(--sidebar-hover);
-}
-
-.sidebar.collapsed .sidebar-footer {
-  padding: 16px 0;
-  display: flex;
-  justify-content: center;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-info-collapsed {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 12px 0;
-}
-
-.user-avatar {
-  width: 42px;
-  height: 42px;
-  background: var(--card-bg);
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+.topnav-brand-text {
   font-size: 15px;
-  color: var(--primary);
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.user-avatar-mini {
-  width: 40px;
-  height: 40px;
-  background: var(--card-bg);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-weight: 800;
-  font-size: 14px;
-  color: var(--primary);
-  flex-shrink: 0;
-  transition: var(--transition);
-}
-
-.user-details {
-  overflow: hidden;
-}
-
-.user-name {
-  font-size: 13.5px;
-  font-weight: 700;
   color: var(--text-white);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.2px;
-}
-
-.user-role {
-  font-size: 11.5px;
-  color: var(--sidebar-text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 1px;
-}
-
-/* ===== BOUTON TOGGLE SIDEBAR ===== */
-.sidebar-float-toggle {
-  position: fixed;
-  top: 22px;
-  left: 240px;
-  transform: translateX(-50%);
-  z-index: 102;
-  background: var(--card-bg);
-  border: 1.5px solid var(--border);
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  /* Transition synchronisée avec la sidebar */
-  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.2s ease,
-              color 0.2s ease,
-              border-color 0.2s ease,
-              box-shadow 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04);
-  color: var(--text-secondary);
-}
-
-.sidebar-float-toggle:hover {
-  background: var(--primary);
-  color: var(--text-white);
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-  transform: translateX(-50%);
-}
-
-/* Le bouton suit la sidebar quand elle est réduite — sélecteur sibling fonctionne
-   car le bouton est maintenant APRÈS la sidebar dans le DOM */
-.sidebar.collapsed ~ .sidebar-float-toggle {
-  left: 80px;
-}
-/* ===== MAIN CONTENT ===== */
-.main-content {
-  flex: 1;
-  margin-left: 240px;
-  transition: var(--transition);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-.sidebar.collapsed ~ .main-content {
-  margin-left: 80px;
-}
-
-/* Topbar */
-.topbar {
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.page-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
   letter-spacing: -0.3px;
+  white-space: nowrap;
 }
 
-/* Content Area */
-.content-area {
+/* ── Navigation principale ──────────────────────────────────
+   `overflow-x: auto` plutot que `flex-wrap` : si les onglets ne tiennent pas,
+   la barre defile au lieu de passer sur deux lignes et de manger de la
+   hauteur. La scrollbar est masquee, le defilement reste possible. */
+.topnav-menu {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   flex: 1;
-  padding: 32px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Mobile Menu Button */
-.mobile-menu-btn {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 90;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
+.topnav-menu::-webkit-scrollbar {
   display: none;
 }
 
-/* Sidebar Overlay */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+.topnav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.topnav-link:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-white);
+}
+
+.topnav-link.active {
+  background: var(--sidebar-active);
+  color: var(--text-white);
+}
+
+.topnav-link.active .topnav-link-icon {
+  color: var(--sidebar-accent);
+}
+
+.topnav-link-icon {
+  flex-shrink: 0;
+}
+
+/* ── Actions a droite ───────────────────────────────────── */
+.topnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.topnav-user-wrap {
+  position: relative;
+}
+
+.topnav-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-white);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  max-width: 230px;
+}
+
+.topnav-user:hover,
+.topnav-user.active {
+  background: var(--sidebar-hover);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.topnav-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.topnav-avatar.lg {
+  width: 40px;
+  height: 40px;
+}
+
+.topnav-avatar .user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.topnav-user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.topnav-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-white);
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topnav-user-role {
+  font-size: 11px;
+  color: var(--sidebar-text);
+  text-transform: capitalize;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topnav-caret {
+  color: var(--sidebar-text);
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.topnav-caret.open {
+  transform: rotate(180deg);
+}
+
+/* ── Menu deroulant du compte ───────────────────────────── */
+.topnav-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
   right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 99;
-  animation: fadeIn 0.3s ease;
+  min-width: 244px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  z-index: 120;
+  animation: topnavDropIn 0.16s ease;
+}
+
+@keyframes topnavDropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.topnav-dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  min-width: 0;
+}
+
+.topnav-dropdown-head .topnav-avatar {
+  background: var(--bg-page);
+}
+
+.topnav-dropdown-head .topnav-user-name {
+  color: var(--text-primary);
+  max-width: 165px;
+}
+
+.topnav-dropdown-head .topnav-user-role {
+  color: var(--text-secondary);
+  text-transform: none;
+  max-width: 165px;
+}
+
+.topnav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 11px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.topnav-dropdown-item:hover {
+  background: var(--bg-page);
+}
+
+.topnav-dropdown-item.danger {
+  color: #dc2626;
+}
+
+.topnav-dropdown-item.danger:hover {
+  background: #fef2f2;
+}
+
+/* ── Burger + panneau mobile ────────────────────────────── */
+.topnav-burger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-white);
+  cursor: pointer;
+}
+
+.topnav-burger:hover {
+  background: var(--sidebar-hover);
+}
+
+.topnav-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 14px;
+  background: var(--sidebar-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 110;
+}
+
+.topnav-mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--sidebar-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.topnav-mobile-link:hover {
+  background: var(--sidebar-hover);
+  color: var(--text-white);
+}
+
+.topnav-mobile-link.active {
+  background: var(--sidebar-active);
+  color: var(--text-white);
+}
+
+.topnav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 80;
+  animation: fadeIn 0.25s ease;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--topnav-height));
+  overflow-x: hidden;
+}
+
+/* Zone de contenu — pleine largeur : la navbar a libere les 240px que
+   prenait la sidebar. Padding vertical reduit, la barre de titre separee
+   ayant disparu. */
+.content-area {
+  flex: 1;
+  padding: 24px 28px 40px;
+  overflow-x: hidden;
+}
+
+/* En-tete de page rendu par le shell (pages sans en-tete propre) */
+.page-heading {
+  margin-bottom: 22px;
+}
+
+.page-heading-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.page-heading-subtitle {
+  margin-top: 5px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
 }
 
 @keyframes fadeIn {
@@ -1059,41 +1039,56 @@ body {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .sidebar {
-    transform: translateX(-100%);
+/* Les onglets reclament ~870px : ils tiennent jusqu'a ~1250px de viewport.
+   En dessous, le nom et le role du compte cedent leur place plutot que de
+   faire deborder la navigation — l'avatar suffit a identifier le compte. */
+@media (max-width: 1250px) {
+  .topnav-inner {
+    gap: 14px;
   }
-  
-  .sidebar:not(.collapsed) {
-    transform: translateX(0);
-  }
-  
-  .sidebar.collapsed {
-    width: 240px;
-    transform: translateX(-100%);
-  }
-  
-  .sidebar-float-toggle {
+
+  .topnav-user-details {
     display: none;
   }
-  
-  .main-content {
-    margin-left: 0 !important;
+
+  .topnav-user {
+    max-width: none;
+    padding: 4px 8px 4px 4px;
   }
-  
-  .mobile-menu-btn {
-    display: flex;
+
+  .topnav-link {
+    padding: 8px 11px;
+    gap: 7px;
   }
-  
-  .topbar {
-    padding: 0 20px;
+}
+
+/* Plage ou les onglets defilent malgre tout : un degrade sur le bord droit
+   signale qu'il en reste hors champ, sinon le dernier onglet parait coupe. */
+@media (max-width: 1080px) and (min-width: 901px) {
+  .topnav-menu {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent);
   }
-  
-  .page-title {
-    font-size: 20px;
-    margin-left: 48px;
+}
+
+/* Sous 900px la navbar ne peut plus afficher tous les onglets : ils passent
+   dans le panneau deroulant, seuls la marque et le compte restent visibles. */
+@media (max-width: 900px) {
+  .topnav-menu {
+    display: none;
   }
-  
+}
+
+@media (max-width: 768px) {
+  .topnav-inner {
+    padding: 0 14px;
+    gap: 12px;
+  }
+
+  .topnav-brand-text {
+    display: none;
+  }
+
   .content-area {
     padding: 20px;
   }

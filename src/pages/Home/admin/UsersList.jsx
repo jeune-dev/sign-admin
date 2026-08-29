@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download, ShieldCheck } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import AccessDenied from '../../../components/AccessDenied';
 import { useServerList } from '../../../hooks/useServerList';
@@ -10,10 +10,35 @@ import {
   activerUtilisateur,
   desactiverUtilisateur,
   rejeterUtilisateur,
-  supprimerUtilisateur
+  supprimerUtilisateur,
+  listerJustificatifsUtilisateur,
+  telechargerJustificatif,
+  statuerJustificatif
 } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
 import '../../../assets/css/listeUser.css';
+
+const LIBELLES_JUSTIFICATIF = {
+  // La pièce d'identité est déposée face par face : les deux sont exigées.
+  cni_recto: 'CNI — recto',
+  cni_verso: 'CNI — verso',
+  passeport_recto: 'Passeport — page photo',
+  passeport_verso: 'Passeport — page opposée',
+  rccm: 'Document RCCM',
+  ninea: 'Document NINEA',
+};
+
+const LIBELLES_STATUT_JUSTIFICATIF = {
+  en_attente: 'En attente',
+  valide: 'Validé',
+  rejete: 'Refusé',
+};
+
+const COULEURS_STATUT_JUSTIFICATIF = {
+  en_attente: '#b26a00',
+  valide: '#1b7f4b',
+  rejete: '#c62828',
+};
 
 const formatUserRow = (user) => ({
   ...user,
@@ -41,9 +66,96 @@ export default function UsersList() {
   );
 
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Justificatifs de l'utilisateur affiché (§ 12). Chargés à l'ouverture de
+  // la fiche : ces pièces vivent dans un espace privé chiffré, on ne les
+  // liste jamais dans le tableau général.
+  const [justificatifs, setJustificatifs] = useState([]);
+  const [chargementJustificatifs, setChargementJustificatifs] = useState(false);
+  const [justificatifEnCours, setJustificatifEnCours] = useState(null);
+
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectMotif, setRejectMotif] = useState('');
   const [rejecting, setRejecting] = useState(false);
+
+  useEffect(() => {
+    if (!selectedUser) {
+      setJustificatifs([]);
+      return;
+    }
+    let annule = false;
+    setChargementJustificatifs(true);
+    listerJustificatifsUtilisateur(selectedUser.id)
+      .then((res) => {
+        if (!annule) setJustificatifs(res?.justificatifs || []);
+      })
+      .catch(() => {
+        if (!annule) setJustificatifs([]);
+      })
+      .finally(() => {
+        if (!annule) setChargementJustificatifs(false);
+      });
+    return () => { annule = true; };
+  }, [selectedUser]);
+
+  /*
+   * Ouvre un justificatif dans un nouvel onglet.
+   * Le fichier n'a pas d'URL publique : on le récupère en Blob via la route
+   * authentifiée, puis on crée une URL d'objet temporaire. Chaque ouverture
+   * est journalisée côté serveur dans audit_log.
+   */
+  const ouvrirJustificatif = async (justificatif) => {
+    setJustificatifEnCours(justificatif.id);
+    let url;
+    try {
+      const blob = await telechargerJustificatif(justificatif.id);
+      url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible d’ouvrir ce justificatif.' });
+    } finally {
+      setJustificatifEnCours(null);
+      // Laisse au navigateur le temps d'ouvrir l'onglet avant de libérer l'URL.
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+  };
+
+  const validerJustificatif = async (justificatif) => {
+    try {
+      await statuerJustificatif(justificatif.id, 'valide');
+      setJustificatifs((liste) =>
+        liste.map((j) => (j.id === justificatif.id ? { ...j, statut: 'valide', motif_rejet: null } : j))
+      );
+      await reload();
+      SwalCustom.fire({ icon: 'success', title: 'Validé', text: 'Le justificatif a été validé.', timer: 2000, timerProgressBar: true, showConfirmButton: false });
+    } catch (err) {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Impossible de valider ce justificatif' });
+    }
+  };
+
+  const refuserJustificatif = async (justificatif) => {
+    const { value: motif } = await SwalCustom.fire({
+      title: 'Refuser ce justificatif',
+      input: 'textarea',
+      inputLabel: 'Motif du refus (communiqué à l’utilisateur)',
+      inputPlaceholder: 'Ex. document illisible, informations non concordantes…',
+      showCancelButton: true,
+      confirmButtonText: 'Refuser',
+      cancelButtonText: 'Annuler',
+      inputValidator: (valeur) => (!valeur || !valeur.trim() ? 'Le motif est obligatoire' : undefined),
+    });
+    if (!motif) return;
+
+    try {
+      await statuerJustificatif(justificatif.id, 'rejete', motif.trim());
+      setJustificatifs((liste) =>
+        liste.map((j) => (j.id === justificatif.id ? { ...j, statut: 'rejete', motif_rejet: motif.trim() } : j))
+      );
+      SwalCustom.fire({ icon: 'success', title: 'Refusé', text: 'Le justificatif a été refusé.', timer: 2000, timerProgressBar: true, showConfirmButton: false });
+    } catch (err) {
+      SwalCustom.fire({ icon: 'error', title: 'Erreur', text: err?.response?.data?.message || 'Impossible de refuser ce justificatif' });
+    }
+  };
 
   // Activer/Désactiver
   const handleToggleStatus = async (user) => {
@@ -136,6 +248,7 @@ export default function UsersList() {
       { header: 'Téléphone', value: (u) => u.telephone },
       { header: 'Rôle', value: (u) => u.role },
       { header: 'Statut', value: (u) => u.statut },
+      { header: 'Vérifié', value: (u) => (u.compte_verifie ? 'Oui' : 'Non') },
       { header: 'Inscrit le', value: (u) => formatDate(u.createdAt) },
     ], all);
   };
@@ -181,6 +294,8 @@ export default function UsersList() {
           <option value="actif">Actif</option>
           <option value="inactif">Inactif</option>
           <option value="en_attente_validation">En attente de validation</option>
+          <option value="verifie">Vérifiés</option>
+          <option value="non_verifie">Non vérifiés</option>
         </select>
         <div className="search-stats">
           {total} utilisateur{total > 1 ? 's' : ''}
@@ -238,11 +353,27 @@ export default function UsersList() {
                       </span>
                     </td>
                     <td>
-                      <span className={`status-badge ${isActif ? 'status-active' : isPending ? 'status-pending' : 'status-inactive'}`}>
-                        {isActif ? <Check size={12} /> : isPending ? <IdCard size={12} /> : <XIcon size={12} />}
-                        {isActif ? 'Actif' : isPending ? 'En attente de validation' : 'Inactif'}
-                      </span>
+                      <div className="statut-cellule">
+                        <span className={`status-badge ${isActif ? 'status-active' : isPending ? 'status-pending' : 'status-inactive'}`}>
+                          {isActif ? <Check size={12} /> : isPending ? <IdCard size={12} /> : <XIcon size={12} />}
+                          {isActif ? 'Actif' : isPending ? 'En attente de validation' : 'Inactif'}
+                        </span>
+                        {/* « Vérifié » n'est pas une valeur de statut mais un état
+                            distinct : l'identité a été contrôlée par un admin, ce
+                            qui lève la limite de documents. Il s'affiche EN PLUS
+                            du statut — un compte vérifié peut être désactivé
+                            ensuite, masquer l'un des deux tromperait. */}
+                        {user.compte_verifie && (
+                          <span className="badge-verifie" title="Identité vérifiée par un administrateur — limite de documents levée">
+                            <ShieldCheck size={12} /> Vérifié
+                          </span>
+                        )}
+                      </div>
                     </td>
+                    {/* Trois actions, quel que soit le statut : la colonne garde une
+                        largeur constante. Le rejet d'un document d'identité reste
+                        accessible depuis « Voir » (et depuis la page Demandes
+                        d'inscription), il n'ajoute plus un 4e bouton ici. */}
                     <td className="actions-cell">
                       <button className="action-btn btn-view" onClick={() => setSelectedUser(user)} title="Voir détails">
                         <Eye size={16} />
@@ -256,12 +387,6 @@ export default function UsersList() {
                         {isActif ? <UserX size={16} /> : <UserCheck size={16} />}
                         <span>{isActif ? 'Désactiver' : isPending ? 'Valider' : 'Activer'}</span>
                       </button>
-                      {isPending && (
-                        <button className="action-btn btn-disable" onClick={() => openRejectModal(user)} title="Rejeter le document">
-                          <XIcon size={16} />
-                          <span>Rejeter</span>
-                        </button>
-                      )}
                       <button className="action-btn btn-delete" onClick={() => handleDelete(user)} title="Supprimer (RGPD)">
                         <Trash2 size={16} />
                         <span>Supprimer</span>
@@ -295,7 +420,12 @@ export default function UsersList() {
         <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
           <div className="modern-modal" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedUser(null)}>×</button>
-            
+
+            {/* Zone défilante : la modale est plafonnée à 90vh, sans elle tout
+                ce qui dépassait — justificatifs compris — restait hors d'atteinte.
+                Le bouton de fermeture et la barre d'actions restent en dehors,
+                donc toujours visibles. */}
+            <div className="modal-scrollable">
             <div className="modal-cover"></div>
             
             <div className="modal-avatar-wrapper">
@@ -381,6 +511,86 @@ export default function UsersList() {
                 </a>
               </div>
             )}
+
+            {/* Justificatifs déposés depuis l'application (§ 12).
+                Stockés chiffrés dans un espace privé : ils s'ouvrent par la
+                route authentifiée, jamais par une URL publique. */}
+            <div className="modal-document-preview" style={{ marginTop: 12 }}>
+              <label>Justificatifs transmis</label>
+              {chargementJustificatifs ? (
+                <p style={{ fontSize: 13, color: '#6b7280' }}>Chargement…</p>
+              ) : justificatifs.length === 0 ? (
+                <p style={{ fontSize: 13, color: '#6b7280' }}>
+                  Aucun justificatif transmis pour l’instant.
+                </p>
+              ) : (
+                justificatifs.map((justificatif) => (
+                  <div
+                    key={justificatif.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      flexWrap: 'wrap',
+                      padding: '10px 0',
+                      borderBottom: '1px solid #f1f1f1',
+                    }}
+                  >
+                    <IdCard size={16} />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {LIBELLES_JUSTIFICATIF[justificatif.type] || justificatif.type}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        color: COULEURS_STATUT_JUSTIFICATIF[justificatif.statut],
+                        background: `${COULEURS_STATUT_JUSTIFICATIF[justificatif.statut]}1A`,
+                      }}
+                    >
+                      {LIBELLES_STATUT_JUSTIFICATIF[justificatif.statut] || justificatif.statut}
+                    </span>
+                    <span style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                      <button
+                        className="modal-btn modal-btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: 12 }}
+                        disabled={justificatifEnCours === justificatif.id}
+                        onClick={() => ouvrirJustificatif(justificatif)}
+                      >
+                        {justificatifEnCours === justificatif.id ? 'Ouverture…' : 'Ouvrir'}
+                      </button>
+                      {justificatif.statut !== 'valide' && (
+                        <button
+                          className="modal-btn modal-btn-success"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                          onClick={() => validerJustificatif(justificatif)}
+                        >
+                          Valider
+                        </button>
+                      )}
+                      {justificatif.statut !== 'rejete' && (
+                        <button
+                          className="modal-btn modal-btn-danger"
+                          style={{ padding: '6px 12px', fontSize: 12 }}
+                          onClick={() => refuserJustificatif(justificatif)}
+                        >
+                          Refuser
+                        </button>
+                      )}
+                    </span>
+                    {justificatif.motif_rejet && (
+                      <p style={{ fontSize: 12, color: '#c62828', width: '100%', margin: 0 }}>
+                        {justificatif.motif_rejet}
+                      </p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            </div>{/* fin modal-scrollable */}
 
             <div className="modal-actions">
               <button className="modal-btn modal-btn-secondary" onClick={() => setSelectedUser(null)}>

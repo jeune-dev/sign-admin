@@ -1,7 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Politique de sécurité du contenu.
+
+      Le dashboard conserve le jeton d'accès en sessionStorage : une seule
+      injection de script suffirait à l'exfiltrer. `script-src 'self'` interdit
+      tout script inline ou distant, ce qui retire au risque son vecteur
+      principal.
+
+      Détail des sources autorisées :
+        connect-src  l'API SIGNS, seule destination réseau légitime ;
+        img-src      blob: pour l'aperçu des justificatifs déchiffrés côté
+                     client, https: pour les photos de profil servies par le
+                     bucket R2 (à restreindre au domaine exact du bucket) ;
+        object-src   blob: pour l'aperçu PDF intégré dans la fiche de revue ;
+        style-src    'unsafe-inline' est imposé par SweetAlert2 et
+                     react-toastify, qui injectent leurs styles à l'exécution ;
+                     fonts.googleapis.com est requis par les @import de
+                     Login.css et Profile.css (police Inter), et
+                     fonts.gstatic.com sert les fichiers de police eux-mêmes.
+
+      Limite connue : `frame-ancestors` est ignoré dans une balise meta. La
+      protection contre le détournement de clic doit venir d'un en-tête
+      X-Frame-Options ou CSP émis par l'hébergeur.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self';
+               style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+               img-src 'self' data: blob: https:;
+               font-src 'self' data: https://fonts.gstatic.com;
+               connect-src 'self' https://api.app-signs.com;
+               object-src 'self' blob:;
+               base-uri 'self';
+               form-action 'self';
+               upgrade-insecure-requests"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/jpeg" href="/logo.jpeg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIGN APP</title>

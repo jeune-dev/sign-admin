@@ -271,3 +271,42 @@
     max-width: 100%;
   }
 }
+
+/* ── Identité dans les tableaux (factures et contrats) ──────────────────
+   Nom sur la première ligne, e-mail en dessous : les deux servent à
+   identifier la personne, et l'e-mail est la clé de recherche la plus
+   fiable. `factures.css` est chargé par les deux pages. */
+.cellule-personne {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cellule-personne-nom {
+  font-weight: 600;
+  color: #111827;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cellule-personne-email {
+  font-size: 12px;
+  color: #6b7280;
+  text-decoration: none;
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellule-personne-email:hover {
+  color: #111827;
+  text-decoration: underline;
+}
+
+.cellule-vide {
+  color: #9ca3af;
+}
