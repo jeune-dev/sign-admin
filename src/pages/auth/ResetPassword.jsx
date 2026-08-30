@@ -19,7 +19,7 @@ export default function ResetPassword() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    document.title = "SIGN APP | Réinitialisation du mot de passe";
+    document.title = "SIGNS | Réinitialisation du mot de passe";
   }, []);
 
   const handleChange = (e) => {
@@ -140,7 +140,10 @@ export default function ResetPassword() {
         )}
       </div>
 
-      <p className="login-copyright">© 2025 SIGN APP — Tous droits réservés</p>
+      <p className="login-copyright">
+        © {new Date().getFullYear()} SIGNS — Tous droits réservés
+        <span className="login-signature">By Africodex Digital</span>
+      </p>
     </div>
   );
 }

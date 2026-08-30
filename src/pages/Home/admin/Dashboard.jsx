@@ -3,7 +3,7 @@ import { statistiques } from "../../../service/admin/adminService";
 import { formatDate, formatNombre } from "../../../utils/format";
 import {
   Users, FileText, FileSignature, RefreshCw,
-  TrendingUp, AlertCircle, FolderOpen
+  TrendingUp, AlertCircle, FolderOpen, CalendarRange
 } from "lucide-react";
 
 /* Couleurs réutilisées pour les répartitions */
@@ -96,10 +96,30 @@ export default function Dashboard() {
 
   const resetPeriode = () => { setDateFrom(""); setDateTo(""); };
 
+  // Les deux bornes sont contraintes l'une par l'autre : `min`/`max` grisent
+  // les dates impossibles dans le calendrier natif. Le garde-fou en JS reste
+  // necessaire — un champ date accepte aussi la saisie au clavier, qui
+  // ignore ces attributs.
+  const changerDebut = (valeur) => {
+    setDateFrom(valeur);
+    if (valeur && dateTo && dateTo < valeur) setDateTo(valeur);
+  };
+  const changerFin = (valeur) => {
+    // Une fin anterieure au debut est refusee plutot que corrigee en
+    // silence : deplacer la borne que l'utilisateur n'a pas touchee
+    // fausserait la periode qu'il croit avoir demandee.
+    if (valeur && dateFrom && valeur < dateFrom) return;
+    setDateTo(valeur);
+  };
+
   const { utilisateurs, contrats, factures, documents, recents, periode } = stats;
+  // Le filtre s'applique desormais a TOUS les chiffres de la page, y compris
+  // avec une seule borne renseignee : le libelle doit le dire.
   const periodeLabel = (dateFrom && dateTo)
     ? `du ${periode.debut || dateFrom} au ${periode.fin || dateTo}`
-    : "6 derniers mois";
+    : dateFrom ? `depuis le ${dateFrom}`
+    : dateTo ? `jusqu'au ${dateTo}`
+    : "depuis le début";
 
   // KPIs orientés pilotage de la plateforme
   const kpis = [
@@ -130,20 +150,30 @@ export default function Dashboard() {
           <p className="header-subtitle">Croissance des utilisateurs et activité documentaire</p>
         </div>
         <div className="filters-container">
-          <input
-            type="date"
-            className="filter-select"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            title="Période — à partir de"
-          />
-          <input
-            type="date"
-            className="filter-select"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            title="Période — jusqu'à"
-          />
+          {/* Deux champs de date identiques ne disaient pas lequel etait le
+              debut : l'etiquette leve l'ambiguite sans infobulle a survoler. */}
+          <label className="filtre-date">
+            <span className="filtre-date-libelle">Du</span>
+            <input
+              type="date"
+              className="filter-select"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(e) => changerDebut(e.target.value)}
+              title="Date de début de la période"
+            />
+          </label>
+          <label className="filtre-date">
+            <span className="filtre-date-libelle">Au</span>
+            <input
+              type="date"
+              className="filter-select"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(e) => changerFin(e.target.value)}
+              title="Date de fin — ne peut pas précéder la date de début"
+            />
+          </label>
           {(dateFrom || dateTo) && (
             <button className="refresh-btn" onClick={resetPeriode}>
               Réinitialiser
@@ -170,6 +200,21 @@ export default function Dashboard() {
       )}
 
       {/* ─── KPIs ───────────────────────────────────────────── */}
+      {/* Bandeau de periode : sans lui, « 12 utilisateurs » sous un filtre se
+          lirait comme un total depuis toujours. Il n'apparait que lorsqu'une
+          borne est posee — hors filtre, la page parle d'elle-meme. */}
+      {(dateFrom || dateTo) && (
+        <div className="dash-periode">
+          <CalendarRange size={15} />
+          <span>
+            Tous les chiffres ci-dessous portent sur la période <strong>{periodeLabel}</strong>.
+          </span>
+          <button className="dash-periode-reset" onClick={resetPeriode}>
+            Voir depuis le début
+          </button>
+        </div>
+      )}
+
       <div className="kpis-grid">
         {kpis.map((kpi) => (
           <div className="kpi-card kpi-card--accent" key={kpi.label} style={{ "--accent": kpi.color }}>

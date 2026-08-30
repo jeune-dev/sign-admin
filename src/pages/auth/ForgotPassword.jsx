@@ -13,7 +13,7 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = "SIGN APP | Mot de passe oublié";
+    document.title = "SIGNS | Mot de passe oublié";
   }, []);
 
   const handleChange = (e) => {
@@ -101,7 +101,10 @@ export default function ForgotPassword() {
         )}
       </div>
 
-      <p className="login-copyright">© 2025 SIGN APP — Tous droits réservés</p>
+      <p className="login-copyright">
+        © {new Date().getFullYear()} SIGNS — Tous droits réservés
+        <span className="login-signature">By Africodex Digital</span>
+      </p>
     </div>
   );
 }

@@ -225,9 +225,9 @@ export default function AdminDashboard() {
           {/* Marque */}
           <div className="topnav-brand">
             <div className="topnav-logo">
-              <img src={logoImage} alt="Logo SIGN" />
+              <img src={logoImage} alt="Logo SIGNS" />
             </div>
-            <span className="topnav-brand-text">SIGN APP</span>
+            <span className="topnav-brand-text">SIGNS</span>
           </div>
 
           {/* Navigation principale — défile horizontalement plutôt que de

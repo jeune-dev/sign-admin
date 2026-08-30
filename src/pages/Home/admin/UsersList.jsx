@@ -161,6 +161,9 @@ export default function UsersList() {
   const handleToggleStatus = async (user) => {
     const isActif = user.statut === 'actif';
     const action = isActif ? 'désactiver' : 'activer';
+    // Le participe passé est déclaré, pas fabriqué : accoler « é » à
+    // l'infinitif donnait « activeré » / « désactiveré ».
+    const participe = isActif ? 'désactivé' : 'activé';
 
     const result = await SwalCustom.fire({
       title: `Voulez-vous ${action} cet utilisateur ?`,
@@ -179,7 +182,7 @@ export default function UsersList() {
       // Recharge depuis le serveur (source de vérité) plutôt qu'une mutation
       // locale optimiste, pour rester cohérent avec la pagination serveur.
       await reload();
-      SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${action}é avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
+      SwalCustom.fire({ icon: 'success', title: 'Succès', text: `Utilisateur ${participe} avec succès`, timer: 2500, timerProgressBar: true, showConfirmButton: false });
     } catch (err) {
       console.error('Erreur lors du changement de statut :', err);
       SwalCustom.fire({ icon: 'error', title: 'Erreur', text: 'Impossible de modifier le statut' });
@@ -253,7 +256,12 @@ export default function UsersList() {
     ], all);
   };
 
-  if (loading) return <div className="loading-spinner">Chargement des utilisateurs...</div>;
+  // NB : pas de `if (loading) return ...` ici. Un retour anticipe demontait
+  // toute la page — champ de recherche compris — a chaque rechargement. Comme
+  // la saisie declenche justement un rechargement, le champ etait recree apres
+  // la premiere lettre et perdait le focus : il fallait recliquer dedans pour
+  // taper la suivante. L'etat de chargement est donc rendu DANS la zone de
+  // resultats, en laissant la barre de recherche montee.
   if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les utilisateurs." />;
 
   return (
@@ -306,7 +314,9 @@ export default function UsersList() {
       </div>
 
       {/* Tableau */}
-      {currentUsers.length === 0 ? (
+      {loading ? (
+        <div className="loading-spinner">Chargement des utilisateurs…</div>
+      ) : currentUsers.length === 0 ? (
         <div className="no-results">
           <Users size={48} />
           <p>Aucun utilisateur trouvé</p>

@@ -16,7 +16,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    document.title = "SIGN APP | Connexion";
+    document.title = "SIGNS | Connexion";
     return () => { document.body.style.overflow = "auto"; };
   }, []);
 
@@ -123,7 +123,10 @@ export default function Login() {
         </form>
       </div>
 
-      <p className="login-copyright">© 2025 SIGN APP — Tous droits réservés</p>
+      <p className="login-copyright">
+        © {new Date().getFullYear()} SIGNS — Tous droits réservés
+        <span className="login-signature">By Africodex Digital</span>
+      </p>
     </div>
   );
 }

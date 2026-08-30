@@ -64,7 +64,12 @@ export default function FactureList() {
     ], all);
   };
 
-  if (loading) return <p>Chargement...</p>;
+  // NB : pas de `if (loading) return ...` ici. Un retour anticipe demontait
+  // toute la page — champ de recherche compris — a chaque rechargement. Comme
+  // la saisie declenche justement un rechargement, le champ etait recree apres
+  // la premiere lettre et perdait le focus : il fallait recliquer dedans pour
+  // taper la suivante. L'etat de chargement est donc rendu DANS la zone de
+  // resultats, en laissant la barre de recherche montee.
   if (accessDenied) return <AccessDenied message="Vous n'avez pas la permission de gérer les factures." />;
 
   return (
@@ -118,7 +123,9 @@ export default function FactureList() {
       </div>
 
       <div className="table-container">
-        {paginatedFactures.length === 0 ? (
+        {loading ? (
+          <p className="no-results">Chargement…</p>
+        ) : paginatedFactures.length === 0 ? (
           <p className="no-results">Aucune facture trouvée.</p>
         ) : (
           <>
