@@ -35,6 +35,7 @@ const ACTIONS = {
   'admin.modifier_permissions': { label: 'Permissions modifiées',      ton: 'sensible', famille: 'admin.' },
 
   // ── Gestion des utilisateurs ──────────────────────────────────────
+  'utilisateur.creer':          { label: 'Utilisateur créé',           ton: 'sensible', famille: 'utilisateur.' },
   'utilisateur.activer':        { label: 'Utilisateur activé',         ton: 'positif', famille: 'utilisateur.' },
   'utilisateur.desactiver':     { label: 'Utilisateur désactivé',      ton: 'alerte',  famille: 'utilisateur.' },
   'utilisateur.rejeter':        { label: 'Document rejeté',            ton: 'alerte',  famille: 'utilisateur.' },

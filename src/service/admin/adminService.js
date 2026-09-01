@@ -79,6 +79,12 @@ export const listeUtilisateurs = async ({ page = 1, limit = 20, search = '', rol
   return unwrap(response);
 };
 
+/* Créer un utilisateur (Particulier, Indépendant ou Professionnel) */
+export const creerUtilisateur = async (utilisateur) => {
+  const response = await api.post('/admin/creer-utilisateur', utilisateur);
+  return unwrap(response);
+};
+
 /* Liste des administrateurs (pagination + recherche côté serveur) */
 export const listerAdmins = async ({ page = 1, limit = 20, search = '' } = {}) => {
   const response = await api.get('/admin/liste-admins', {

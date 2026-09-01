@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download, ShieldCheck } from 'lucide-react';
+import { Users, Check, X as XIcon, Eye, Search, ChevronLeft, ChevronRight, UserCheck, UserX, Mail, Phone, MapPin, IdCard, Trash2, Download, ShieldCheck, UserPlus } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
 import AccessDenied from '../../../components/AccessDenied';
 import { useServerList } from '../../../hooks/useServerList';
@@ -13,7 +13,8 @@ import {
   supprimerUtilisateur,
   listerJustificatifsUtilisateur,
   telechargerJustificatif,
-  statuerJustificatif
+  statuerJustificatif,
+  creerUtilisateur
 } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
 import '../../../assets/css/listeUser.css';
@@ -38,6 +39,29 @@ const COULEURS_STATUT_JUSTIFICATIF = {
   en_attente: '#b26a00',
   valide: '#1b7f4b',
   rejete: '#c62828',
+};
+
+/*
+ * Formulaire de création vide.
+ *
+ * Les mêmes informations que l'inscription rapide côté application : nom,
+ * prénom, rôle et téléphone. Tout le reste est facultatif — un compte créé
+ * ici se complète ensuite depuis l'application, comme n'importe quel autre.
+ */
+const FORMULAIRE_VIDE = {
+  role: 'Particulier',
+  nom: '',
+  prenom: '',
+  telephone: '',
+  email: '',
+  mot_de_passe: '',
+  ville: '',
+  adresse: '',
+  nomEntreprise: '',
+  adresseEntreprise: '',
+  rc: '',
+  ninea: '',
+  envoyerEmail: true,
 };
 
 const formatUserRow = (user) => ({
@@ -73,6 +97,12 @@ export default function UsersList() {
   const [justificatifs, setJustificatifs] = useState([]);
   const [chargementJustificatifs, setChargementJustificatifs] = useState(false);
   const [justificatifEnCours, setJustificatifEnCours] = useState(null);
+
+  // Création d'un utilisateur depuis le tableau de bord.
+  const [creationOuverte, setCreationOuverte] = useState(false);
+  const [formulaire, setFormulaire] = useState(FORMULAIRE_VIDE);
+  const [creationEnCours, setCreationEnCours] = useState(false);
+  const [erreurCreation, setErreurCreation] = useState('');
 
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectMotif, setRejectMotif] = useState('');
@@ -237,6 +267,70 @@ export default function UsersList() {
     }
   };
 
+  // ─── Création d'un utilisateur ─────────────────────────────────────────
+  const majFormulaire = (champ, valeur) => {
+    setFormulaire((precedent) => ({ ...precedent, [champ]: valeur }));
+  };
+
+  const ouvrirCreation = () => {
+    setFormulaire(FORMULAIRE_VIDE);
+    setErreurCreation('');
+    setCreationOuverte(true);
+  };
+
+  const fermerCreation = () => {
+    if (creationEnCours) return;
+    setCreationOuverte(false);
+  };
+
+  const handleCreer = async (e) => {
+    e.preventDefault();
+    setErreurCreation('');
+
+    const estParticulier = formulaire.role === 'Particulier';
+
+    // Les champs vides ne sont pas envoyés : le schéma Joi les refuserait
+    // (une chaîne vide n'est pas un e-mail valide) alors qu'ils signifient
+    // simplement « non renseigné ».
+    const charge = { role: formulaire.role, envoyerEmail: formulaire.envoyerEmail };
+    const champsTexte = [
+      'nom', 'prenom', 'telephone', 'email', 'mot_de_passe', 'ville', 'adresse',
+      ...(estParticulier ? [] : ['nomEntreprise', 'adresseEntreprise']),
+      ...(formulaire.role === 'Professionnel' ? ['rc', 'ninea'] : []),
+    ];
+    for (const champ of champsTexte) {
+      const valeur = (formulaire[champ] || '').trim();
+      if (valeur) charge[champ] = valeur;
+    }
+
+    setCreationEnCours(true);
+    try {
+      await creerUtilisateur(charge);
+      setCreationOuverte(false);
+      setFormulaire(FORMULAIRE_VIDE);
+      await reload();
+      SwalCustom.fire({
+        icon: 'success',
+        title: 'Utilisateur créé',
+        text: charge.email && formulaire.envoyerEmail
+          ? 'Le compte a été créé et un e-mail de bienvenue a été envoyé.'
+          : 'Le compte a été créé.',
+        timer: 2600,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      // Le backend renvoie un message rédigé pour être affiché tel quel
+      // (numéro déjà utilisé, e-mail en double…) : on ne le reformule pas.
+      const message = err?.response?.data?.details?.[0]
+        || err?.response?.data?.message
+        || 'Création impossible. Vérifiez les informations saisies.';
+      setErreurCreation(message);
+    } finally {
+      setCreationEnCours(false);
+    }
+  };
+
   // Export CSV — récupère TOUTES les pages correspondant à la recherche
   // active (pas seulement la page actuellement affichée à l'écran).
   const handleExport = async () => {
@@ -310,6 +404,9 @@ export default function UsersList() {
         </div>
         <button className="btn-export" onClick={handleExport} disabled={total === 0}>
           <Download size={16} /> <span>Exporter CSV</span>
+        </button>
+        <button className="btn-creer" onClick={ouvrirCreation}>
+          <UserPlus size={16} /> <span>Nouvel utilisateur</span>
         </button>
       </div>
 
@@ -626,6 +723,221 @@ export default function UsersList() {
                   : 'Activer'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL - Création d'un utilisateur */}
+      {creationOuverte && (
+        <div className="modal-overlay" onClick={fermerCreation}>
+          <div className="modern-modal" style={{ maxWidth: 620 }} onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={fermerCreation}>×</button>
+            <h2 className="modal-name">Nouvel utilisateur</h2>
+            <p className="modal-role">
+              Le compte est actif immédiatement — la personne pourra le compléter
+              depuis l’application.
+            </p>
+            <div className="modal-divider"></div>
+
+            <form onSubmit={handleCreer}>
+              {/* Zone défilante : le formulaire d'un professionnel dépasse la
+                  hauteur de la modale, la barre d'actions doit rester visible. */}
+              <div className="modal-scrollable">
+                <div className="form-creation">
+                  <div className="form-grille">
+                    <div className="form-champ pleine-largeur">
+                      <label htmlFor="creation-role">Type de compte</label>
+                      <select
+                        id="creation-role"
+                        value={formulaire.role}
+                        onChange={(e) => majFormulaire('role', e.target.value)}
+                      >
+                        <option value="Particulier">Particulier</option>
+                        <option value="Independant">Indépendant</option>
+                        <option value="Professionnel">Professionnel</option>
+                      </select>
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-prenom">Prénom</label>
+                      <input
+                        id="creation-prenom"
+                        value={formulaire.prenom}
+                        onChange={(e) => majFormulaire('prenom', e.target.value)}
+                        placeholder="Awa"
+                        required
+                        minLength={2}
+                      />
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-nom">Nom</label>
+                      <input
+                        id="creation-nom"
+                        value={formulaire.nom}
+                        onChange={(e) => majFormulaire('nom', e.target.value)}
+                        placeholder="Diop"
+                        required
+                        minLength={2}
+                      />
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-telephone">Téléphone</label>
+                      <input
+                        id="creation-telephone"
+                        value={formulaire.telephone}
+                        onChange={(e) => majFormulaire('telephone', e.target.value)}
+                        placeholder="+221771234567"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-email">
+                        Adresse e-mail<span className="facultatif">facultatif</span>
+                      </label>
+                      <input
+                        id="creation-email"
+                        type="email"
+                        value={formulaire.email}
+                        onChange={(e) => majFormulaire('email', e.target.value)}
+                        placeholder="exemple@email.com"
+                      />
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-ville">
+                        Ville<span className="facultatif">facultatif</span>
+                      </label>
+                      <input
+                        id="creation-ville"
+                        value={formulaire.ville}
+                        onChange={(e) => majFormulaire('ville', e.target.value)}
+                        placeholder="Dakar"
+                      />
+                    </div>
+
+                    <div className="form-champ">
+                      <label htmlFor="creation-adresse">
+                        Adresse<span className="facultatif">facultatif</span>
+                      </label>
+                      <input
+                        id="creation-adresse"
+                        value={formulaire.adresse}
+                        onChange={(e) => majFormulaire('adresse', e.target.value)}
+                        placeholder="Rue 10, Point E"
+                      />
+                    </div>
+
+                    <div className="form-champ pleine-largeur">
+                      <label htmlFor="creation-mot-de-passe">
+                        Mot de passe<span className="facultatif">facultatif</span>
+                      </label>
+                      <input
+                        id="creation-mot-de-passe"
+                        type="password"
+                        value={formulaire.mot_de_passe}
+                        onChange={(e) => majFormulaire('mot_de_passe', e.target.value)}
+                        placeholder="8 caractères, 1 majuscule, 1 minuscule, 1 chiffre"
+                        autoComplete="new-password"
+                      />
+                      <p className="form-aide">
+                        Laissez vide pour que la personne définisse elle-même son mot
+                        de passe via « Mot de passe oublié » — une adresse e-mail est
+                        alors indispensable.
+                      </p>
+                    </div>
+
+                    {formulaire.role !== 'Particulier' && (
+                      <>
+                        <div className="form-section-titre">Entreprise</div>
+                        <div className="form-champ">
+                          <label htmlFor="creation-entreprise">
+                            Nom de l’entreprise<span className="facultatif">facultatif</span>
+                          </label>
+                          <input
+                            id="creation-entreprise"
+                            value={formulaire.nomEntreprise}
+                            onChange={(e) => majFormulaire('nomEntreprise', e.target.value)}
+                          />
+                        </div>
+                        <div className="form-champ">
+                          <label htmlFor="creation-adresse-entreprise">
+                            Adresse de l’entreprise<span className="facultatif">facultatif</span>
+                          </label>
+                          <input
+                            id="creation-adresse-entreprise"
+                            value={formulaire.adresseEntreprise}
+                            onChange={(e) => majFormulaire('adresseEntreprise', e.target.value)}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {formulaire.role === 'Professionnel' && (
+                      <>
+                        <div className="form-champ">
+                          <label htmlFor="creation-rccm">
+                            RCCM<span className="facultatif">facultatif</span>
+                          </label>
+                          <input
+                            id="creation-rccm"
+                            value={formulaire.rc}
+                            onChange={(e) => majFormulaire('rc', e.target.value)}
+                            placeholder="SN.DKR.2017.A.19778"
+                          />
+                        </div>
+                        <div className="form-champ">
+                          <label htmlFor="creation-ninea">
+                            NINEA<span className="facultatif">facultatif</span>
+                          </label>
+                          <input
+                            id="creation-ninea"
+                            value={formulaire.ninea}
+                            onChange={(e) => majFormulaire('ninea', e.target.value)}
+                            placeholder="0058125112G3"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <label className="form-case">
+                      <input
+                        type="checkbox"
+                        checked={formulaire.envoyerEmail}
+                        onChange={(e) => majFormulaire('envoyerEmail', e.target.checked)}
+                        disabled={!formulaire.email.trim()}
+                      />
+                      <span>
+                        Envoyer un e-mail de bienvenue
+                        {!formulaire.email.trim() && ' (nécessite une adresse e-mail)'}
+                      </span>
+                    </label>
+                  </div>
+
+                  {erreurCreation && (
+                    <p style={{ color: '#c62828', fontSize: 13, fontWeight: 600, marginTop: 14 }}>
+                      {erreurCreation}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="modal-btn modal-btn-secondary"
+                  onClick={fermerCreation}
+                  disabled={creationEnCours}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="modal-btn modal-btn-success" disabled={creationEnCours}>
+                  {creationEnCours ? 'Création…' : 'Créer l’utilisateur'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
