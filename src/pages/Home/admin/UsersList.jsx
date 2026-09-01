@@ -17,6 +17,7 @@ import {
   creerUtilisateur
 } from '../../../service/admin/adminService';
 import { exportToCsv } from '../../../utils/exportCsv';
+import { normaliserPrenom, normaliserNomFamille } from '../../../utils/nomPersonne';
 import '../../../assets/css/listeUser.css';
 
 const LIBELLES_JUSTIFICATIF = {
@@ -269,7 +270,13 @@ export default function UsersList() {
 
   // ─── Création d'un utilisateur ─────────────────────────────────────────
   const majFormulaire = (champ, valeur) => {
-    setFormulaire((precedent) => ({ ...precedent, [champ]: valeur }));
+    // Le nom et le prénom prennent leur forme définitive dès la frappe : le
+    // serveur les normalise de toute façon à l'enregistrement, autant montrer
+    // tout de suite ce qui sera créé.
+    let valeurRetenue = valeur;
+    if (champ === 'prenom') valeurRetenue = normaliserPrenom(valeur);
+    if (champ === 'nom') valeurRetenue = normaliserNomFamille(valeur);
+    setFormulaire((precedent) => ({ ...precedent, [champ]: valeurRetenue }));
   };
 
   const ouvrirCreation = () => {

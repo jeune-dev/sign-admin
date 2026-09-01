@@ -19,6 +19,7 @@ import {
   Lock
 } from 'lucide-react';
 import SwalCustom from '../../../utils/swal.config';
+import { normaliserPrenom, normaliserNomFamille } from '../../../utils/nomPersonne';
 import AccessDenied from '../../../components/AccessDenied';
 import { useServerList } from '../../../hooks/useServerList';
 import { useUser } from '../../../context/useUser';
@@ -111,7 +112,14 @@ export default function AdminList() {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    // Un administrateur est un compte comme un autre : son nom suit la même
+    // règle d'écriture, appliquée par le serveur à l'enregistrement. La
+    // reproduire ici évite que le formulaire montre autre chose que ce qui
+    // sera créé.
+    let valeurRetenue = value;
+    if (name === 'prenom') valeurRetenue = normaliserPrenom(value);
+    if (name === 'nom') valeurRetenue = normaliserNomFamille(value);
+    setForm(prev => ({ ...prev, [name]: valeurRetenue }));
   };
 
   const togglePermission = (key) => {
